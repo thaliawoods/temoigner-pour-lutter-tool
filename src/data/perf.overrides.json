@@ -1,0 +1,6 @@
+{
+  "collectif-lastesis": {
+    "media": { "videoSrc": "/media/video/lastesis.mp4" },
+    "perf": { "modes": ["loop"], "intensite": "forte", "notes": "choeur + texte projeté" }
+  }
+}
