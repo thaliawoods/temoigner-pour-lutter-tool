@@ -1,3 +1,4 @@
+// src/components/ArchiveCard.tsx
 import Link from "next/link";
 import type { TPLReference } from "@/lib/schema";
 
@@ -12,7 +13,7 @@ export default function ArchiveCard({ r }: { r: TPLReference }) {
 
   return (
     <Link
-      href={`/reference/${encodeURIComponent(r.id)}`}
+      href={`/archives/${encodeURIComponent(r.id)}`}
       className="group block border border-zinc-300 bg-white hover:bg-zinc-50"
     >
       <div className="p-4">

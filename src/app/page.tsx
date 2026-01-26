@@ -82,8 +82,8 @@ export default function HomePage() {
           </div>
 
           <p className="mt-6 max-w-3xl text-base leading-relaxed text-zinc-800">
-            (texte perf) — un dispositif numérique pour organiser une bibliothèque
-            de références, et activer des médias en live pendant la performance.
+            Un dispositif numérique pour organiser une bibliothèque
+            de références, et activer des médias en live.
           </p>
 
           <div className="mt-4 text-sm text-zinc-700">
@@ -123,7 +123,7 @@ export default function HomePage() {
                   {slice.map((r) => (
                     <Link
                       key={r.id}
-                      href={`/references/${encodeURIComponent(r.id)}`}
+                      href={`/archives/${encodeURIComponent(r.id)}`}
                       className="block border border-zinc-200 bg-white hover:bg-zinc-50"
                     >
                       <div className="aspect-[4/3] bg-zinc-100 border-b border-zinc-200 overflow-hidden">

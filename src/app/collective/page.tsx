@@ -12,10 +12,10 @@ export default function CollectivePage() {
 
         <div className="mt-8 grid gap-8 md:grid-cols-3">
           <div className="md:col-span-2 text-base leading-relaxed text-zinc-800">
-            (bio / présentation) — qui vous êtes, d’où vient le projet, ce que vous cherchez.
+            Ely et Marion sont deux artistes etc.
             <br />
             <br />
-            (statement) — archives, voix, images, luttes, performance.
+            archives, voix, images, luttes, performance.
           </div>
 
           <div className="border border-zinc-300 p-4">
@@ -23,8 +23,8 @@ export default function CollectivePage() {
               links
             </div>
             <div className="mt-3 text-sm">
-              <div>• instagram: (à remplir)</div>
-              <div>• contact: (à remplir)</div>
+              <div>• instagram: https://www.instagram.com/ely.marion.collective/</div>
+              <div>• contact: elymarioncollective@gmail.com </div>
             </div>
           </div>
         </div>
