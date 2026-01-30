@@ -46,7 +46,9 @@ export default function SiteHeader({
   const path = usePathname();
   const isHome = path === "/";
 
-  // ===== Overlay (home video) =====
+  const isActive = (href: string) => path === href;
+
+  // ===== Overlay (home) =====
   if (variant === "overlay") {
     return (
       <header className="absolute inset-x-0 top-0 z-50 text-white">
@@ -61,31 +63,35 @@ export default function SiteHeader({
                 active={isHome}
                 className="text-white leading-tight"
               />
-              <span className="mono text-[10px] uppercase tracking-[0.22em] text-white/70">
-                mvp
-              </span>
             </div>
 
             <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2">
               <NavItem
-                href="/collective"
-                label="Collective"
+                href="/diy"
+                label="Do It Yourself"
                 align="center"
-                active={path === "/collective"}
+                active={isActive("/diy")}
                 className="text-white whitespace-nowrap"
               />
               <NavItem
                 href="/archives"
                 label="Archives"
                 align="center"
-                active={path === "/archives"}
+                active={isActive("/archives")}
                 className="text-white whitespace-nowrap"
               />
               <NavItem
-                href="/live"
-                label="Live"
+                href="/performances"
+                label="Performances"
                 align="center"
-                active={path === "/live"}
+                active={isActive("/performances")}
+                className="text-white whitespace-nowrap"
+              />
+              <NavItem
+                href="/collective"
+                label="Collective"
+                align="center"
+                active={isActive("/collective")}
                 className="text-white whitespace-nowrap"
               />
             </div>
@@ -98,7 +104,7 @@ export default function SiteHeader({
                 href="/collective"
                 label="Ely & Marion Collective"
                 align="left"
-                active={path === "/collective"}
+                active={isActive("/collective")}
                 className="text-white"
               />
 
@@ -112,17 +118,24 @@ export default function SiteHeader({
 
               <div className="flex justify-end gap-6">
                 <NavItem
-                  href="/archives"
-                  label="Archives"
+                  href="/diy"
+                  label="Do It Yourself"
                   align="right"
-                  active={path === "/archives"}
+                  active={isActive("/diy")}
                   className="text-white whitespace-nowrap"
                 />
                 <NavItem
-                  href="/live"
-                  label="Live"
+                  href="/archives"
+                  label="Archives"
                   align="right"
-                  active={path === "/live"}
+                  active={isActive("/archives")}
+                  className="text-white whitespace-nowrap"
+                />
+                <NavItem
+                  href="/performances"
+                  label="Performances"
+                  align="right"
+                  active={isActive("/performances")}
                   className="text-white whitespace-nowrap"
                 />
               </div>
@@ -147,31 +160,35 @@ export default function SiteHeader({
               active={isHome}
               className="leading-tight"
             />
-            <span className="mono text-[10px] uppercase tracking-[0.22em] text-zinc-500 whitespace-nowrap">
-              mvp
-            </span>
           </div>
 
           <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2">
             <NavItem
-              href="/collective"
-              label="Collective"
+              href="/diy"
+              label="Do It Yourself"
               align="center"
-              active={path === "/collective"}
+              active={isActive("/diy")}
               className="whitespace-nowrap"
             />
             <NavItem
               href="/archives"
               label="Archives"
               align="center"
-              active={path === "/archives"}
+              active={isActive("/archives")}
               className="whitespace-nowrap"
             />
             <NavItem
-              href="/live"
-              label="Live"
+              href="/performances"
+              label="Performances"
               align="center"
-              active={path === "/live"}
+              active={isActive("/performances")}
+              className="whitespace-nowrap"
+            />
+            <NavItem
+              href="/collective"
+              label="Collective"
+              align="center"
+              active={isActive("/collective")}
               className="whitespace-nowrap"
             />
           </div>
@@ -188,33 +205,36 @@ export default function SiteHeader({
 
           <div className="flex justify-center gap-6">
             <NavItem
-              href="/collective"
-              label="collective"
+              href="/diy"
+              label="do it yourself"
               align="center"
-              active={path === "/collective"}
+              active={isActive("/diy")}
               className="whitespace-nowrap"
             />
             <NavItem
               href="/archives"
               label="archives"
               align="center"
-              active={path === "/archives"}
+              active={isActive("/archives")}
               className="whitespace-nowrap"
             />
             <NavItem
-              href="/live"
-              label="live"
+              href="/performances"
+              label="performances"
               align="center"
-              active={path === "/live"}
+              active={isActive("/performances")}
+              className="whitespace-nowrap"
+            />
+            <NavItem
+              href="/collective"
+              label="collective"
+              align="center"
+              active={isActive("/collective")}
               className="whitespace-nowrap"
             />
           </div>
 
-          <div className="flex justify-end">
-            <span className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-              mvp
-            </span>
-          </div>
+          <div className="flex justify-end" />
         </div>
       </div>
     </header>

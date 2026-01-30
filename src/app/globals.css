@@ -26,3 +26,12 @@ input, select, textarea, button {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 }
+
+html, body {
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+}
+
+body {
+  overflow-x: hidden;
+}

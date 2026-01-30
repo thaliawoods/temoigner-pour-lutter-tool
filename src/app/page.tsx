@@ -1,160 +1,264 @@
-// src/app/page.tsx
-import Link from "next/link";
-import { getAllReferences } from "@/lib/references";
-import type { TPLReference, TPLType } from "@/lib/schema";
+"use client";
 
-const PREVIEW_PER_TYPE = 3;
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-function prettyType(t: string) {
-  return t.replaceAll("_", " ");
+type Tile = {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
 }
 
-function groupByType(refs: TPLReference[]) {
-  const map = new Map<TPLType, TPLReference[]>();
-  for (const r of refs) {
-    const arr = map.get(r.type) ?? [];
-    arr.push(r);
-    map.set(r.type, arr);
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function makeTiles(count: number) {
+  const rand = mulberry32(42);
+  const tiles: Tile[] = [];
+  const WORLD_W = 7000;
+  const WORLD_H = 4500;
+
+  for (let i = 0; i < count; i++) {
+    const base = 90 + Math.floor(rand() * 170);
+    const ratio = 0.7 + rand() * 0.9;
+    const w = Math.round(base * (ratio >= 1 ? ratio : 1));
+    const h = Math.round(base * (ratio < 1 ? 1 / ratio : 1));
+
+    const x = Math.round(rand() * (WORLD_W - w) - WORLD_W / 2);
+    const y = Math.round(rand() * (WORLD_H - h) - WORLD_H / 2);
+
+    tiles.push({ id: `tile-${i}`, x, y, w, h });
   }
-  return map;
+
+  return tiles;
 }
 
 export default function HomePage() {
-  const refs = getAllReferences();
-  const byType = groupByType(refs);
+  // Ajuste si besoin selon ton header/footer réels
+  const TOP_SAFE = 64;
+  const BOTTOM_SAFE = 72;
+
+  const TILE_COUNT = 220;
+  const MIN_Z = 0.25;
+  const MAX_Z = 2.2;
+
+  const initialTiles = useMemo(() => makeTiles(TILE_COUNT), []);
+  const [tiles, setTiles] = useState<Tile[]>(initialTiles);
+
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  const [view, setView] = useState({ x: 0, y: 0, z: 0.8 });
+  const viewRef = useRef(view);
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  // ---- PAN (fond) ----
+  const panDraggingRef = useRef(false);
+  const panLastRef = useRef({ x: 0, y: 0 });
+
+  const onBackgroundPointerDown = (e: React.PointerEvent) => {
+    panDraggingRef.current = true;
+    panLastRef.current = { x: e.clientX, y: e.clientY };
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+
+  const onBackgroundPointerMove = (e: React.PointerEvent) => {
+    if (!panDraggingRef.current) return;
+
+    const dx = e.clientX - panLastRef.current.x;
+    const dy = e.clientY - panLastRef.current.y;
+    panLastRef.current = { x: e.clientX, y: e.clientY };
+
+    const z = viewRef.current.z;
+    setView((v) => ({ ...v, x: v.x + dx / z, y: v.y + dy / z }));
+  };
+
+  const onBackgroundPointerUp = () => {
+    panDraggingRef.current = false;
+  };
+
+  // ---- ZOOM (wheel/trackpad) ----
+  const onWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const el = wrapRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+
+    const { x, y, z } = viewRef.current;
+
+    const delta = -e.deltaY;
+    const factor = delta > 0 ? 1.08 : 1 / 1.08;
+    const nextZ = clamp(z * factor, MIN_Z, MAX_Z);
+
+    const wxBefore = x + (px - rect.width / 2) / z;
+    const wyBefore = y + (py - rect.height / 2) / z;
+
+    const wxAfter = x + (px - rect.width / 2) / nextZ;
+    const wyAfter = y + (py - rect.height / 2) / nextZ;
+
+    setView({
+      x: x + (wxBefore - wxAfter),
+      y: y + (wyBefore - wyAfter),
+      z: nextZ,
+    });
+  };
+
+  // ---- DRAG tile ----
+  const tileDraggingRef = useRef<{
+    id: string;
+    startClientX: number;
+    startClientY: number;
+    startTileX: number;
+    startTileY: number;
+  } | null>(null);
+
+  const bringToFront = (id: string) => {
+    setTiles((prev) => {
+      const idx = prev.findIndex((t) => t.id === id);
+      if (idx < 0) return prev;
+      const copy = prev.slice();
+      const [picked] = copy.splice(idx, 1);
+      copy.push(picked);
+      return copy;
+    });
+  };
+
+  const onTilePointerDown = (e: React.PointerEvent, id: string) => {
+    e.stopPropagation();
+
+    const t = tiles.find((tt) => tt.id === id);
+    if (!t) return;
+
+    bringToFront(id);
+
+    tileDraggingRef.current = {
+      id,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startTileX: t.x,
+      startTileY: t.y,
+    };
+
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+
+  const onTilePointerMove = (e: React.PointerEvent) => {
+    const drag = tileDraggingRef.current;
+    if (!drag) return;
+    e.stopPropagation();
+
+    const dx = e.clientX - drag.startClientX;
+    const dy = e.clientY - drag.startClientY;
+
+    const z = viewRef.current.z;
+    const nx = drag.startTileX + dx / z;
+    const ny = drag.startTileY + dy / z;
+
+    setTiles((prev) =>
+      prev.map((t) => (t.id === drag.id ? { ...t, x: nx, y: ny } : t))
+    );
+  };
+
+  const onTilePointerUp = (e: React.PointerEvent) => {
+    if (!tileDraggingRef.current) return;
+    e.stopPropagation();
+    tileDraggingRef.current = null;
+  };
+
+  const transform = `translate3d(50%, 50%, 0) scale(${view.z}) translate3d(${-view.x}px, ${-view.y}px, 0)`;
 
   return (
     <main className="bg-white text-zinc-900">
-      {/* HERO VIDEO */}
-      <section className="relative border-b border-zinc-200">
-        <div className="relative aspect-[16/9] w-full bg-black">
-
-          <video
-            className="absolute inset-0 h-full w-full object-cover"
-            src="/media/performance.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
-
-          {/* overlay title inside video (comme liquid architecture) */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center px-6">
-            <div className="mono text-[12px] uppercase tracking-widest text-white/85">
-              programme / performance
+      <section
+        className="relative w-full overflow-hidden"
+        style={{
+          height: `calc(100svh - ${TOP_SAFE + BOTTOM_SAFE}px)`,
+          overscrollBehavior: "none",
+        }}
+      >
+        {/* Titre fixe */}
+        <header className="pointer-events-none absolute left-6 top-6 z-30">
+          <div className="pointer-events-auto inline-block">
+            <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+              Ely &amp; Marion Collective
             </div>
+            <h1 className="mt-2 text-4xl font-medium leading-tight">
+              Témoigner pour lutter
+            </h1>
           </div>
+        </header>
 
-          <div className="absolute bottom-5 right-6 z-10 mono text-[11px] uppercase tracking-widest text-white/70">
-            (muted)
+        {/* Surface pan/zoom */}
+        <div
+          ref={wrapRef}
+          className="absolute inset-0 cursor-grab active:cursor-grabbing"
+          style={{
+            touchAction: "none",
+            overscrollBehavior: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+          }}
+          onPointerDown={onBackgroundPointerDown}
+          onPointerMove={onBackgroundPointerMove}
+          onPointerUp={onBackgroundPointerUp}
+          onPointerCancel={onBackgroundPointerUp}
+          onWheel={onWheel}
+        >
+          <div
+            className="absolute left-0 top-0 will-change-transform"
+            style={{ transform, transformOrigin: "0 0" }}
+          >
+            {tiles.map((t) => (
+              <div
+                key={t.id}
+                className="absolute bg-white border border-zinc-200"
+                style={{
+                  left: t.x,
+                  top: t.y,
+                  width: t.w,
+                  height: t.h,
+                  touchAction: "none",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                }}
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                onPointerDown={(e) => onTilePointerDown(e, t.id)}
+                onPointerMove={onTilePointerMove}
+                onPointerUp={onTilePointerUp}
+                onPointerCancel={onTilePointerUp}
+              >
+                <div className="h-full w-full" />
+              </div>
+            ))}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setView({ x: 0, y: 0, z: 0.8 })}
+          className="absolute bottom-6 right-6 z-40 border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
+        >
+          reset view
+        </button>
       </section>
-
-      {/* PRESENTATION */}
-      <section className="border-b border-zinc-200">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-            performance
-          </div>
-
-          <h1 className="mt-3 text-4xl font-semibold">Témoigner pour lutter</h1>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 border border-zinc-200">
-            <div className="border-b md:border-b-0 md:border-r border-zinc-200 p-4">
-              <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-                format
-              </div>
-              <div className="mt-2 text-sm">live performance + archive tool</div>
-            </div>
-            <div className="border-b md:border-b-0 md:border-r border-zinc-200 p-4">
-              <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-                status
-              </div>
-              <div className="mt-2 text-sm">mvp</div>
-            </div>
-            <div className="p-4">
-              <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-                sound
-              </div>
-              <div className="mt-2 text-sm">soon</div>
-            </div>
-          </div>
-
-          <p className="mt-6 max-w-3xl text-base leading-relaxed text-zinc-800">
-            Un dispositif numérique pour organiser une bibliothèque
-            de références, et activer des médias en live.
-          </p>
-
-          <div className="mt-4 text-sm text-zinc-700">
-            <span className="mono uppercase tracking-widest text-[11px] text-zinc-600">
-              note
-            </span>{" "}
-            — utiliser{" "}
-            <Link className="underline" href="/archives">
-              Archives
-            </Link>{" "}
-            pour explorer,{" "}
-            <Link className="underline" href="/live">
-              Live
-            </Link>{" "}
-            pour activer.
-          </div>
-        </div>
-      </section>
-
-      {/* ARCHIVE PREVIEW (comme “Videos / Related …”) */}
-      <section className="border-b border-zinc-200">
-        <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
-          {Array.from(byType.entries()).map(([type, items]) => {
-            const slice = items.slice(0, PREVIEW_PER_TYPE);
-            if (slice.length === 0) return null;
-
-            return (
-              <div key={type}>
-                <div className="flex items-baseline justify-between gap-4">
-                  <div className="text-lg font-medium">{prettyType(type)}</div>
-                  <Link className="mono text-[11px] uppercase tracking-widest underline" href="/archives">
-                    view all
-                  </Link>
-                </div>
-
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {slice.map((r) => (
-                    <Link
-                      key={r.id}
-                      href={`/archives/${encodeURIComponent(r.id)}`}
-                      className="block border border-zinc-200 bg-white hover:bg-zinc-50"
-                    >
-                      <div className="aspect-[4/3] bg-zinc-100 border-b border-zinc-200 overflow-hidden">
-                        {r.media?.kind === "image" ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.media.src} alt={r.media.alt ?? r.title} className="h-full w-full object-cover" />
-                        ) : r.media?.kind === "video" ? (
-                          <video src={r.media.src} className="h-full w-full object-cover" muted playsInline />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center mono text-[11px] uppercase tracking-widest text-zinc-500">
-                            no media
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-3">
-                        <div className="text-sm font-medium leading-snug">{r.title}</div>
-                        <div className="mono mt-1 text-[11px] uppercase tracking-widest text-zinc-600">
-                          {prettyType(r.type)}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* footer est global via layout */}
     </main>
   );
 }
