@@ -74,6 +74,9 @@ export default function SiteFooter() {
             <div className="mt-3 text-sm text-zinc-700">
               Ely &amp; Marion Collective
             </div>
+            <div className="mt-3 text-sm text-zinc-700">
+              Thalia Woods
+            </div>
           </div>
         </div>
       </div>
