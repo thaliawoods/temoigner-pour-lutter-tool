@@ -1,264 +1,410 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const BUCKET = "tpl-web";
+
+type MediaItem = {
+  type: "image" | "video";
+  path: string; // ex: "image/xxx.png" ou "video/xxx.mp4"
+};
 
 type Tile = {
   id: string;
+  media: MediaItem;
   x: number;
   y: number;
   w: number;
   h: number;
+  z: number;
 };
 
-function clamp(n: number, min: number, max: number) {
+type View = { x: number; y: number; scale: number };
+
+function isVideoPath(path: string): boolean {
+  return /\.(mp4|webm|mov|m4v)$/i.test(path);
+}
+
+function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
-function mulberry32(seed: number) {
-  return function () {
-    let t = (seed += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+// --- Supabase singleton (évite “Multiple GoTrueClient instances” en dev/HMR) ---
+declare global {
+  // eslint-disable-next-line no-var
+  var __tpl_supabase__: SupabaseClient | undefined;
 }
 
-function makeTiles(count: number) {
-  const rand = mulberry32(42);
-  const tiles: Tile[] = [];
-  const WORLD_W = 7000;
-  const WORLD_H = 4500;
-
-  for (let i = 0; i < count; i++) {
-    const base = 90 + Math.floor(rand() * 170);
-    const ratio = 0.7 + rand() * 0.9;
-    const w = Math.round(base * (ratio >= 1 ? ratio : 1));
-    const h = Math.round(base * (ratio < 1 ? 1 / ratio : 1));
-
-    const x = Math.round(rand() * (WORLD_W - w) - WORLD_W / 2);
-    const y = Math.round(rand() * (WORLD_H - h) - WORLD_H / 2);
-
-    tiles.push({ id: `tile-${i}`, x, y, w, h });
+function getSupabase(): SupabaseClient | null {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  if (!globalThis.__tpl_supabase__) {
+    globalThis.__tpl_supabase__ = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
+  return globalThis.__tpl_supabase__ ?? null;
+}
 
-  return tiles;
+function buildPublicUrl(supabase: SupabaseClient, path: string): string {
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// petit “random” déterministe (stable au refresh)
+function seeded01(seed: number): number {
+  const x = Math.sin(seed * 9999) * 10000;
+  return x - Math.floor(x);
+}
+
+function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Tile[] {
+  const count = media.length;
+
+  // Option B: le “spread” du nuage dépend du nb de médias
+  const spread = clamp(250 + count * 10, 350, 2200);
+
+  const baseW = viewportW > 900 ? 220 : 160;
+  const baseH = viewportW > 900 ? 160 : 120;
+
+  return media.map((m, i) => {
+    const r1 = seeded01(i + 1);
+    const r2 = seeded01(i + 2);
+    const r3 = seeded01(i + 3);
+
+    const sizeBoost = m.type === "video" ? 1.1 : 1.0;
+    const w = Math.round((baseW + r3 * 160) * sizeBoost);
+    const h = Math.round((baseH + r1 * 140) * sizeBoost);
+
+    // centre + nuage
+    const x = Math.round(viewportW * 0.35 + (r1 - 0.5) * spread);
+    const y = Math.round(viewportH * 0.55 + (r2 - 0.5) * spread);
+
+    return {
+      id: `${m.type}-${i}-${m.path}`,
+      media: m,
+      x,
+      y,
+      w,
+      h,
+      z: i + 1,
+    };
+  });
 }
 
 export default function HomePage() {
-  // Ajuste si besoin selon ton header/footer réels
-  const TOP_SAFE = 64;
-  const BOTTOM_SAFE = 72;
+  const supabase = useMemo(() => getSupabase(), []);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const TILE_COUNT = 220;
-  const MIN_Z = 0.25;
-  const MAX_Z = 2.2;
+  const [loading, setLoading] = useState(true);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [tiles, setTiles] = useState<Tile[]>([]);
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
-  const initialTiles = useMemo(() => makeTiles(TILE_COUNT), []);
-  const [tiles, setTiles] = useState<Tile[]>(initialTiles);
-
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
-  const [view, setView] = useState({ x: 0, y: 0, z: 0.8 });
-  const viewRef = useRef(view);
-  useEffect(() => {
-    viewRef.current = view;
-  }, [view]);
-
-  // ---- PAN (fond) ----
-  const panDraggingRef = useRef(false);
-  const panLastRef = useRef({ x: 0, y: 0 });
-
-  const onBackgroundPointerDown = (e: React.PointerEvent) => {
-    panDraggingRef.current = true;
-    panLastRef.current = { x: e.clientX, y: e.clientY };
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-  };
-
-  const onBackgroundPointerMove = (e: React.PointerEvent) => {
-    if (!panDraggingRef.current) return;
-
-    const dx = e.clientX - panLastRef.current.x;
-    const dy = e.clientY - panLastRef.current.y;
-    panLastRef.current = { x: e.clientX, y: e.clientY };
-
-    const z = viewRef.current.z;
-    setView((v) => ({ ...v, x: v.x + dx / z, y: v.y + dy / z }));
-  };
-
-  const onBackgroundPointerUp = () => {
-    panDraggingRef.current = false;
-  };
-
-  // ---- ZOOM (wheel/trackpad) ----
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const el = wrapRef.current;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-
-    const { x, y, z } = viewRef.current;
-
-    const delta = -e.deltaY;
-    const factor = delta > 0 ? 1.08 : 1 / 1.08;
-    const nextZ = clamp(z * factor, MIN_Z, MAX_Z);
-
-    const wxBefore = x + (px - rect.width / 2) / z;
-    const wyBefore = y + (py - rect.height / 2) / z;
-
-    const wxAfter = x + (px - rect.width / 2) / nextZ;
-    const wyAfter = y + (py - rect.height / 2) / nextZ;
-
-    setView({
-      x: x + (wxBefore - wxAfter),
-      y: y + (wyBefore - wyAfter),
-      z: nextZ,
-    });
-  };
-
-  // ---- DRAG tile ----
-  const tileDraggingRef = useRef<{
+  // drag tile
+  const dragTileRef = useRef<{
     id: string;
-    startClientX: number;
-    startClientY: number;
-    startTileX: number;
-    startTileY: number;
+    startX: number;
+    startY: number;
+    tileX: number;
+    tileY: number;
   } | null>(null);
 
-  const bringToFront = (id: string) => {
+  // pan canvas
+  const panRef = useRef<{
+    startX: number;
+    startY: number;
+    viewX: number;
+    viewY: number;
+  } | null>(null);
+
+  const mediaCount = media.length;
+  const imageCount = media.filter((m) => m.type === "image").length;
+  const videoCount = media.filter((m) => m.type === "video").length;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      setLoading(true);
+
+      if (!supabase) {
+        console.warn("[SUPABASE] missing env vars");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const [imgs, vids] = await Promise.all([
+          supabase.storage.from(BUCKET).list("image", {
+            limit: 1000,
+            offset: 0,
+            sortBy: { column: "name", order: "asc" },
+          }),
+          supabase.storage.from(BUCKET).list("video", {
+            limit: 1000,
+            offset: 0,
+            sortBy: { column: "name", order: "asc" },
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        const images: MediaItem[] =
+          imgs.data?.map((f) => ({ type: "image", path: `image/${f.name}` })) ?? [];
+        const videos: MediaItem[] =
+          vids.data?.map((f) => ({ type: "video", path: `video/${f.name}` })) ?? [];
+
+        const all = [...images, ...videos];
+
+        console.log("[SUPABASE] images", images.length, "videos", videos.length);
+        console.log("[SUPABASE] example image", images[0]);
+        console.log("[SUPABASE] example video", videos[0]);
+
+        setMedia(all);
+      } catch (e) {
+        console.error("[SUPABASE] list error", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
+  // regen tiles when media changes or viewport changes
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const rebuild = () => {
+      const rect = el.getBoundingClientRect();
+      const nextTiles = makeTiles(media, rect.width, rect.height);
+      setTiles(nextTiles);
+    };
+
+    rebuild();
+
+    const ro = new ResizeObserver(() => rebuild());
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, [media]);
+
+  function bringToFront(id: string) {
     setTiles((prev) => {
-      const idx = prev.findIndex((t) => t.id === id);
-      if (idx < 0) return prev;
-      const copy = prev.slice();
-      const [picked] = copy.splice(idx, 1);
-      copy.push(picked);
-      return copy;
+      const maxZ = prev.reduce((acc, t) => Math.max(acc, t.z), 0);
+      return prev.map((t) => (t.id === id ? { ...t, z: maxZ + 1 } : t));
     });
-  };
+  }
 
-  const onTilePointerDown = (e: React.PointerEvent, id: string) => {
+  function onTilePointerDown(e: React.PointerEvent, id: string) {
     e.stopPropagation();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
 
-    const t = tiles.find((tt) => tt.id === id);
+    const t = tiles.find((x) => x.id === id);
     if (!t) return;
 
     bringToFront(id);
 
-    tileDraggingRef.current = {
+    dragTileRef.current = {
       id,
-      startClientX: e.clientX,
-      startClientY: e.clientY,
-      startTileX: t.x,
-      startTileY: t.y,
+      startX: e.clientX,
+      startY: e.clientY,
+      tileX: t.x,
+      tileY: t.y,
     };
+  }
 
+  function onCanvasPointerDown(e: React.PointerEvent) {
+    // click on background => pan
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-  };
+    panRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      viewX: view.x,
+      viewY: view.y,
+    };
+  }
 
-  const onTilePointerMove = (e: React.PointerEvent) => {
-    const drag = tileDraggingRef.current;
-    if (!drag) return;
-    e.stopPropagation();
+  function onPointerMove(e: React.PointerEvent) {
+    // tile drag
+    if (dragTileRef.current) {
+      const d = dragTileRef.current;
+      const dx = (e.clientX - d.startX) / view.scale;
+      const dy = (e.clientY - d.startY) / view.scale;
 
-    const dx = e.clientX - drag.startClientX;
-    const dy = e.clientY - drag.startClientY;
+      setTiles((prev) =>
+        prev.map((t) => (t.id === d.id ? { ...t, x: d.tileX + dx, y: d.tileY + dy } : t))
+      );
+      return;
+    }
 
-    const z = viewRef.current.z;
-    const nx = drag.startTileX + dx / z;
-    const ny = drag.startTileY + dy / z;
+    // pan
+    if (panRef.current) {
+      const p = panRef.current;
+      const dx = e.clientX - p.startX;
+      const dy = e.clientY - p.startY;
+      setView((v) => ({ ...v, x: p.viewX + dx, y: p.viewY + dy }));
+    }
+  }
 
-    setTiles((prev) =>
-      prev.map((t) => (t.id === drag.id ? { ...t, x: nx, y: ny } : t))
-    );
-  };
+  function onPointerUp(e: React.PointerEvent) {
+    dragTileRef.current = null;
+    panRef.current = null;
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  }
 
-  const onTilePointerUp = (e: React.PointerEvent) => {
-    if (!tileDraggingRef.current) return;
-    e.stopPropagation();
-    tileDraggingRef.current = null;
-  };
+  function onWheel(e: React.WheelEvent) {
+    // zoom doux au wheel (trackpad-friendly)
+    if (e.ctrlKey) return; // laisse pinch-zoom navigateur si besoin
+    e.preventDefault();
 
-  const transform = `translate3d(50%, 50%, 0) scale(${view.z}) translate3d(${-view.x}px, ${-view.y}px, 0)`;
+    const delta = -e.deltaY;
+    const nextScale = clamp(view.scale + delta * 0.001, 0.35, 2.2);
+
+    // zoom towards cursor
+    const el = containerRef.current;
+    if (!el) {
+      setView((v) => ({ ...v, scale: nextScale }));
+      return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    const worldX = (cx - view.x) / view.scale;
+    const worldY = (cy - view.y) / view.scale;
+
+    const nextX = cx - worldX * nextScale;
+    const nextY = cy - worldY * nextScale;
+
+    setView({ x: nextX, y: nextY, scale: nextScale });
+  }
+
+  function resetView() {
+    setView({ x: 0, y: 0, scale: 1 });
+  }
 
   return (
-    <main className="bg-white text-zinc-900">
-      <section
-        className="relative w-full overflow-hidden"
-        style={{
-          height: `calc(100svh - ${TOP_SAFE + BOTTOM_SAFE}px)`,
-          overscrollBehavior: "none",
-        }}
-      >
-        {/* Titre fixe */}
-        <header className="pointer-events-none absolute left-6 top-6 z-30">
-          <div className="pointer-events-auto inline-block">
-            <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-              Ely &amp; Marion Collective
-            </div>
-            <h1 className="mt-2 text-4xl font-medium leading-tight">
-              Témoigner pour lutter
-            </h1>
-          </div>
-        </header>
+    <main className="w-full">
+      {/* HERO (comme avant) */}
+      <section className="px-6 pt-10 pb-6 max-w-[1400px]">
+        <div className="mono text-[11px] tracking-[0.22em] uppercase opacity-60">
+          ELY &amp; MARION COLLECTIVE
+        </div>
+        <h1 className="mt-3 font-sans text-[56px] leading-[1.02] tracking-[-0.02em]">
+          Témoigner pour lutter
+        </h1>
 
-        {/* Surface pan/zoom */}
+        <div className="mt-4 mono text-[12px] opacity-60">
+          media: {imageCount} images · {videoCount} videos
+        </div>
+
+      </section>
+
+      <section className="relative w-full border-y border-black/10">
         <div
-          ref={wrapRef}
-          className="absolute inset-0 cursor-grab active:cursor-grabbing"
-          style={{
-            touchAction: "none",
-            overscrollBehavior: "none",
-            WebkitUserSelect: "none",
-            userSelect: "none",
-          }}
-          onPointerDown={onBackgroundPointerDown}
-          onPointerMove={onBackgroundPointerMove}
-          onPointerUp={onBackgroundPointerUp}
-          onPointerCancel={onBackgroundPointerUp}
+          ref={containerRef}
+          className="relative h-[620px] w-full overflow-hidden bg-white touch-none"
+          onPointerDown={onCanvasPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
           onWheel={onWheel}
         >
           <div
-            className="absolute left-0 top-0 will-change-transform"
-            style={{ transform, transformOrigin: "0 0" }}
+            className="absolute inset-0"
+            style={{
+              transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.scale})`,
+              transformOrigin: "0 0",
+            }}
           >
-            {tiles.map((t) => (
-              <div
-                key={t.id}
-                className="absolute bg-white border border-zinc-200"
-                style={{
-                  left: t.x,
-                  top: t.y,
-                  width: t.w,
-                  height: t.h,
-                  touchAction: "none",
-                  WebkitUserSelect: "none",
-                  userSelect: "none",
-                }}
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-                onPointerDown={(e) => onTilePointerDown(e, t.id)}
-                onPointerMove={onTilePointerMove}
-                onPointerUp={onTilePointerUp}
-                onPointerCancel={onTilePointerUp}
-              >
-                <div className="h-full w-full" />
-              </div>
-            ))}
-          </div>
-        </div>
+            <div className="absolute inset-0 pointer-events-none opacity-[0.08]">
+              {Array.from({ length: 60 }).map((_, i) => {
+                const r1 = seeded01(1000 + i);
+                const r2 = seeded01(2000 + i);
+                const r3 = seeded01(3000 + i);
+                const w = 60 + Math.round(r3 * 220);
+                const h = 40 + Math.round(r1 * 180);
+                const x = Math.round(r1 * 2400);
+                const y = Math.round(r2 * 1600);
+                return (
+                  <div
+                    key={i}
+                    className="absolute border border-black/20 bg-white"
+                    style={{ left: x, top: y, width: w, height: h }}
+                  />
+                );
+              })}
+            </div>
 
-        <button
-          type="button"
-          onClick={() => setView({ x: 0, y: 0, z: 0.8 })}
-          className="absolute bottom-6 right-6 z-40 border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
-        >
-          reset view
-        </button>
+            {tiles.map((t) => {
+              const isVideo = t.media.type === "video" || isVideoPath(t.media.path);
+
+              if (!supabase) return null;
+              const url = buildPublicUrl(supabase, t.media.path);
+
+              return (
+                <div
+                  key={t.id}
+                  data-kind="tile"
+                  className="absolute select-none"
+                  style={{
+                    left: t.x,
+                    top: t.y,
+                    width: t.w,
+                    height: t.h,
+                    zIndex: t.z,
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                    background: "white",
+                  }}
+                  onPointerDown={(e) => onTilePointerDown(e, t.id)}
+                >
+                  {isVideo ? (
+                    <video
+                      src={url}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={url}
+                      alt=""
+                      draggable={false}
+                      className="w-full h-full object-cover"
+                      onError={() => console.warn("IMG error:", t.media.path)}
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+            {!loading && mediaCount === 0 && (
+              <div className="absolute left-6 top-6 mono text-[12px] opacity-60">
+                No media found in bucket “{BUCKET}” (folders “image/” and “video/”).
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={resetView}
+            className="absolute right-8 bottom-8 z-50 mono text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-5 py-3 hover:bg-black/5 transition-colors"
+          >
+            Reset view
+          </button>
+        </div>
       </section>
     </main>
   );
 }
+

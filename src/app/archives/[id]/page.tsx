@@ -1,4 +1,3 @@
-// src/app/archives/[id]/page.tsx
 import { notFound } from "next/navigation";
 import { getReferenceById } from "@/lib/references";
 import type { TPLReference } from "@/lib/schema";
@@ -25,7 +24,7 @@ export default async function ArchiveReferencePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; // ✅ OBLIGATOIRE en Next 16
+  const { id } = await params; 
 
   const r = getReferenceById(id);
   if (!r) return notFound();
@@ -53,7 +52,6 @@ export default async function ArchiveReferencePage({
                 <source src={r.media.src} />
               </video>
             ) : r.media?.kind === "image" ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={r.media.src}
                 alt={r.media.alt ?? r.title}
@@ -68,7 +66,6 @@ export default async function ArchiveReferencePage({
             )}
           </div>
 
-          {/* META */}
           <div className="grid grid-cols-1 md:grid-cols-3">
             <MetaCell label="year" value={formatYear(r)} />
             <MetaCell label="location" value={r.location ?? "—"} />
@@ -81,7 +78,6 @@ export default async function ArchiveReferencePage({
             <MetaCell label="id" value={r.id} />
           </div>
 
-          {/* NOTES */}
           <div className="border-t border-zinc-300 p-4">
             <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
               notes

@@ -15,15 +15,13 @@ function formatYear(r: TPLReference): string {
 }
 
 function sortKey(r: TPLReference) {
-  // récent -> ancien
   if (typeof r.year === "number") return r.year;
   if (typeof r.yearRange?.start === "number") return r.yearRange.start;
-  return Number.NEGATIVE_INFINITY; // sans date à la fin
+  return Number.NEGATIVE_INFINITY;
 }
 
 function MediaCenter({ r }: { r: TPLReference }) {
   if (r.media?.kind === "image") {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
       <img
         src={r.media.src}
@@ -48,7 +46,6 @@ function MediaCenter({ r }: { r: TPLReference }) {
 }
 
 export default function ArchivesReader() {
-  // refs triées : récent -> ancien, puis "—" à la fin
   const refs = useMemo(() => {
     const all = getAllReferences();
     return [...all].sort((a, b) => {
@@ -63,7 +60,6 @@ export default function ArchivesReader() {
 
       if (bk !== ak) return bk - ak;
 
-      // tie-break : titre
       return a.title.localeCompare(b.title, "fr", { sensitivity: "base" });
     });
   }, []);
@@ -78,7 +74,6 @@ export default function ArchivesReader() {
   return (
     <main className="bg-white text-zinc-900">
       <div className="mx-auto max-w-[1500px] px-6 py-10">
-        {/* ✅ header (comme tes autres pages) */}
         <header className="mb-6">
           <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
             archives
@@ -89,9 +84,7 @@ export default function ArchivesReader() {
           </p>
         </header>
 
-        {/* ✅ split 3 colonnes */}
         <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,520px)_1fr] gap-0 border border-zinc-200">
-          {/* LEFT — list */}
           <aside className="border-b lg:border-b-0 lg:border-r border-zinc-200">
             <div className="max-h-[calc(100vh-220px)] overflow-auto">
               {refs.map((r) => {
@@ -136,14 +129,12 @@ export default function ArchivesReader() {
             </div>
           </aside>
 
-          {/* CENTER — media */}
           <section className="border-b lg:border-b-0 lg:border-r border-zinc-200 bg-white">
             <div className="h-[520px] w-full">
               {selected ? <MediaCenter r={selected} /> : null}
             </div>
           </section>
 
-          {/* RIGHT — text */}
           <section className="bg-white">
             {selected ? (
               <div className="p-6">
