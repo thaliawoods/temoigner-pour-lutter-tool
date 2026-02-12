@@ -1,200 +1,245 @@
-// src/app/collective/page.tsx
+"use client";
+
 import Link from "next/link";
 
-const TIMELINE_2025 = [
-  {
-    date: "Mars 2025",
-    label:
-      "Représentation à l’ESADSE lors du séminaire sur les actes politiques autour du numérique (association Process)",
-  },
-  {
-    date: "Avril / Mai 2025",
-    label: "Résidence de recherche et création (2 semaines), Aléatronome, Saint-Étienne",
-  },
-  {
-    date: "Juillet 2025",
-    label: "Représentation au festival Picardiscount, Richecourt",
-  },
-  {
-    date: "Juillet 2025",
-    label: "Résidence de recherche et création (2 semaines), DROP, Saint-Étienne",
-  },
-  {
-    date: "Octobre / Novembre 2025",
-    label:
-      "Résidence de recherche et création Sonarea (2 semaines), AADN & GRAME CNCM, Villeurbanne",
-  },
-  {
-    date: "Novembre 2025",
-    label: "Représentation au festival Desmadre, Paris",
-  },
-];
-
-export default function CollectivePage() {
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id?: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <main className="min-h-screen bg-white text-zinc-900">
-      <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-          collective
+    <section id={id} className="border-t border-black/10 py-6">
+      <div className="mx-auto w-full max-w-[1120px] px-6">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 md:col-span-3">
+            <div className="mono text-[11px] uppercase tracking-widest text-black/60">
+              {title}
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-9">
+            <div className="border-t border-black/10" />
+            <div className="mt-4">{children}</div>
+          </div>
         </div>
+      </div>
+    </section>
+  );
+}
 
-        <h1 className="mt-3 text-3xl font-semibold">Ely &amp; Marion Collective</h1>
+function Row({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-12 gap-6 border-b border-black/10 py-4">
+      <div className="col-span-12 md:col-span-3">
+        <div className="mono text-[11px] uppercase tracking-widest text-black/55">
+          {label}
+        </div>
+      </div>
+      <div className="col-span-12 md:col-span-9">
+        <div className="text-[14px] leading-6 text-black/90">{children}</div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="mt-8 grid gap-10 md:grid-cols-3">
-          <div className="md:col-span-2 space-y-8 text-[15px] leading-relaxed text-zinc-800">
-            <p>
-              Le duo <span className="font-medium">Ely &amp; Marion</span> est né
-              avec l’intention de créer un outil de diffusion des luttes
-              féministes. La collective est composée de deux jeunes artistes,
-              <span className="font-medium"> Elyette Gauthier</span> et{" "}
-              <span className="font-medium">Marion Serclérat</span>, récemment
-              diplômées du DNSEP Art contemporain – Design contemporain,
-              mention Espace, à l’École d’Art et de Design de Saint-Étienne.
-            </p>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="border border-zinc-200 p-4">
-                <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                  Elyette Gauthier
-                </div>
-                <p className="mt-3 text-[14px] leading-relaxed text-zinc-800">
-                  Artiste pluridisciplinaire (sculpture, graphisme, édition,
-                  estampe, performance, son). Elle explore la création sonore
-                  via le montage live d’échantillons, l’enregistrement audio et
-                  le mix, avec l’objectif de concevoir des espaces inclusifs au
-                  sein d’environnements immersifs. Son travail interroge aussi
-                  la représentation des corps sexisés dans l’espace public et
-                  les dynamiques de domination / appropriation des lieux.
-                </p>
+function ContactBlock() {
+  return (
+    <div className="w-full md:max-w-[420px]">
+      <div className="border-t border-black/10" />
+      <div className="grid grid-cols-12 gap-6 py-4 border-b border-black/10">
+        <div className="col-span-12 md:col-span-4">
+          <div className="mono text-[11px] uppercase tracking-widest text-black/60">
+            contact
+          </div>
+        </div>
+        <div className="col-span-12 md:col-span-8">
+          <div className="space-y-3 text-[14px] leading-6">
+            <div>
+              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                email
               </div>
-
-              <div className="border border-zinc-200 p-4">
-                <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                  Marion Serclérat
-                </div>
-                <p className="mt-3 text-[14px] leading-relaxed text-zinc-800">
-                  Professeure et artiste numérique. Sa recherche porte sur les
-                  communautés en ligne, notamment la manosphère, qu’elle analyse
-                  avec un regard critique cyberféministe. Elle crée des objets
-                  numériques (jeux vidéo, courts métrages) et développe aussi
-                  des formes dans l’espace physique via l’édition et l’affiche.
-                </p>
-              </div>
+              <a
+                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                href="mailto:elymarioncollective@gmail.com"
+              >
+                elymarioncollective@gmail.com
+              </a>
             </div>
 
-            <div className="border border-zinc-200 p-4">
-              <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                Témoigner pour lutter
+            <div>
+              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                instagram
               </div>
+              <a
+                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                href="https://instagram.com/ely.marion.collective"
+                target="_blank"
+                rel="noreferrer"
+              >
+                @ely.marion.collective
+              </a>
+            </div>
 
-              <p className="mt-3 text-[14px] leading-relaxed text-zinc-800">
-                <span className="font-medium">Performance live audiovisuelle</span>{" "}
-                composée en duo — Marion à l’image, Elyette au son. Une tentative
-                de subvertir des espaces saturés par la violence et les codes
-                patriarcaux, en les envahissant avec des codes et références
-                féministes, et de créer des liens entre l’espace public de la
-                ville et celui du numérique (violences patriarcales, coloniales,
-                capitalistes).
-              </p>
-
-              <p className="mt-3 text-[14px] leading-relaxed text-zinc-800">
-                Le dispositif met en relation une bibliothèque de références : extraits
-                sonores (podcasts, musique, lectures performées) et bibliothèque
-                visuelle (image textuelle, photographie, extraits vidéo / films),
-                joués en simultané et en direct. La performance est aussi pensée
-                comme un processus de diffusion et un outil de dialogue.
-              </p>
-
-              <p className="mt-3 text-[14px] leading-relaxed text-zinc-800">
-                L’intégralité de la bibliothèque rassemblée est matérialisée par
-                une affiche (crédits) généralement partagée au public, pour que
-                les sources puissent être découvertes, gardées et archivées à
-                leur tour.
-              </p>
-
-              <div className="mt-4 text-sm text-zinc-700">
-                <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                  navigation
-                </span>{" "}
-                —{" "}
-                <Link className="underline" href="/archives">
-                  Archives
-                </Link>{" "}
-                pour explorer la bibliothèque ·{" "}
-                <Link className="underline" href="/live">
-                  Live
-                </Link>{" "}
-                pour activer en performance.
+            <div>
+              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                phones
+              </div>
+              <div className="text-black/90">
+                Ely : <span className="mono">06 32 33 71 02</span>
+                <br />
+                Marion : <span className="mono">06 27 62 41 43</span>
               </div>
             </div>
           </div>
-
-          <aside className="space-y-8">
-            <div className="border border-zinc-200 p-4">
-              <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                contact
-              </div>
-
-              <div className="mt-3 space-y-2 text-sm text-zinc-800">
-                <div>
-                  <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    email
-                  </span>
-                  <div className="mt-1">
-                    <a
-                      className="underline"
-                      href="mailto:elymarioncollective@gmail.com"
-                    >
-                      elymarioncollective@gmail.com
-                    </a>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    instagram
-                  </span>
-                  <div className="mt-1">
-                    <a
-                      className="underline"
-                      href="https://www.instagram.com/ely.marion.collective/"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      @ely.marion.collective
-                    </a>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-zinc-200">
-                  <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    phones
-                  </span>
-                  <div className="mt-1">Ely : 06 32 33 71 02</div>
-                  <div>Marion : 06 27 62 41 43</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-zinc-200 p-4">
-              <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                2025
-              </div>
-
-              <ul className="mt-3 space-y-3 text-sm text-zinc-800">
-                {TIMELINE_2025.map((it) => (
-                  <li key={it.date} className="border-b border-zinc-100 pb-3">
-                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                      {it.date}
-                    </div>
-                    <div className="mt-1 leading-relaxed">{it.label}</div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function CollectivePage() {
+  return (
+    <main className="w-full">
+      {/* HERO */}
+      <div className="mx-auto w-full max-w-[1120px] px-6 pt-12 pb-6">
+        <div className="grid grid-cols-12 gap-6 items-start">
+          <div className="col-span-12 md:col-span-7">
+            <div className="mono text-[11px] uppercase tracking-widest text-black/60">
+              collective
+            </div>
+
+            <h1 className="mt-3 text-[44px] leading-[1.02] font-semibold tracking-tight">
+              Ely &amp; Marion Collective
+            </h1>
+
+            <p className="mt-5 max-w-[64ch] text-[14px] leading-6 text-black/85">
+              Le duo Ely &amp; Marion est né avec l’intention de créer un outil
+              de diffusion des luttes féministes. La collective est composée de
+              deux jeunes artistes, <strong>Elyette Gauthier</strong> et{" "}
+              <strong>Marion Serclérat</strong>, récemment diplômées du DNSEP Art
+              contemporain — Design contemporain, mention Espace, à l’École
+              d’Art et de Design de Saint-Étienne.
+            </p>
+          </div>
+
+          <div className="col-span-12 md:col-span-5 md:justify-self-end">
+            <ContactBlock />
+          </div>
+        </div>
+      </div>
+
+      {/* À PROPOS */}
+      <Section id="a-propos" title="à propos">
+        <div className="border-t border-black/10">
+          <Row label="mission">
+            Créer un outil de diffusion des luttes féministes.
+          </Row>
+          <Row label="composition">Elyette Gauthier · Marion Serclérat</Row>
+          <Row label="formation">
+            DNSEP Art contemporain — Design contemporain, mention Espace
+            (ESADSE).
+          </Row>
+        </div>
+      </Section>
+
+      {/* ARTISTES */}
+      <Section id="artistes" title="artistes">
+        <div className="border-t border-black/10">
+          <Row label="elyette gauthier">
+            Artiste pluridisciplinaire (sculpture, graphisme, édition, estampe,
+            performance, son). Elle explore la création sonore via le montage
+            live d’échantillons, l’enregistrement audio et le mix, avec
+            l’objectif de concevoir des espaces inclusifs au sein
+            d’environnements immersifs. Son travail interroge aussi la
+            représentation des corps sexisés dans l’espace public et les
+            dynamiques de domination / appropriation des lieux.
+          </Row>
+
+          <Row label="marion serclérat">
+            Professeure et artiste numérique. Sa recherche porte sur les
+            communautés en ligne, notamment la manosphère, qu’elle analyse avec
+            un regard critique cyberféministe. Elle crée des objets numériques
+            (jeux vidéo, courts métrages) et développe aussi des formes dans
+            l’espace physique via l’édition et l’affiche.
+          </Row>
+        </div>
+      </Section>
+
+      {/* TÉMOIGNER POUR LUTTER */}
+      <Section id="temoigner" title="témoigner pour lutter">
+        <div className="border-t border-black/10">
+          <Row label="performance">
+            Performance live audiovisuelle composée en duo — Marion à l’image,
+            Elyette au son. Une tentative de subvertir des espaces saturés par
+            la violence et les codes patriarcaux, en les envahissant avec des
+            codes et références féministes, et de créer des liens entre l’espace
+            public de la ville et celui du numérique (violences patriarcales,
+            coloniales, capitalistes).
+          </Row>
+
+          <Row label="dispositif">
+            Le dispositif met en relation une bibliothèque de références :
+            extraits sonores (podcasts, musique, lectures performées) et
+            bibliothèque visuelle (image textuelle, photographie, extraits vidéo
+            / films), joués en simultané et en direct. La performance est aussi
+            pensée comme un processus de diffusion et un outil de dialogue.
+          </Row>
+
+          <Row label="navigation">
+            <span className="inline-flex gap-3">
+              <Link
+                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                href="/archives"
+              >
+                Archives
+              </Link>
+              <span className="text-black/40">·</span>
+              <Link
+                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                href="/live"
+              >
+                Live
+              </Link>
+            </span>
+          </Row>
+        </div>
+      </Section>
+
+      {/* 2025 */}
+      <Section id="2025" title="2025">
+        <div className="border-t border-black/10">
+          <Row label="mars 2025">
+            Représentation à l’ESADSE lors du séminaire sur les actes politiques
+            autour du numérique (association Process)
+          </Row>
+          <Row label="avril / mai 2025">
+            Résidence de recherche et création (2 semaines), Aléatronome,
+            Saint-Étienne
+          </Row>
+          <Row label="juillet 2025">
+            Représentation au festival Picardiscount, Richecourt
+          </Row>
+          <Row label="juillet 2025">
+            Résidence de recherche et création (2 semaines), DROP, Saint-Étienne
+          </Row>
+          <Row label="octobre / novembre 2025">
+            Résidence de recherche et création Sonarea (2 semaines), AADN &amp;
+            GRAME CNCM, Villeurbanne
+          </Row>
+          <Row label="novembre 2025">
+            Représentation au festival Desmadre, Paris
+          </Row>
+        </div>
+      </Section>
     </main>
   );
 }
