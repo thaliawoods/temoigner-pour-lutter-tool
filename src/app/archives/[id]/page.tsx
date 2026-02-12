@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getReferenceById } from "@/lib/references";
 import type { TPLMedia, TPLReference } from "@/lib/schema";
-import { buildPublicUrl } from "@/lib/media";
+import { buildPublicUrl } from "@/lib/public-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
