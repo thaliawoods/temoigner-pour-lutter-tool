@@ -959,14 +959,21 @@ export default function DIYPage() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-  return (
-    <main className="bg-white text-zinc-900">
-      <div className="mx-auto max-w-6xl px-6 pt-6 pb-14">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-              do it yourself — drag → compose → export
+return (
+  <main className="bg-white text-zinc-900">
+    <div className="mx-auto max-w-6xl px-6 pt-6 pb-14">
+      <div className="pt-4">
+        <div className="grid grid-cols-12 gap-6 items-end">
+          <div className="col-span-12 lg:col-span-8">
+            <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
+              do it yourself
             </div>
+
+            {/* ✅ plus petit, plus proche des autres pages */}
+            <h1 className="mt-3 text-[30px] leading-[1.15] font-semibold tracking-tight">
+              drag → compose → export
+            </h1>
+
             <div className="mt-2 mono text-[11px] uppercase tracking-widest text-zinc-400">
               {loadingMedia
                 ? "loading media…"
@@ -974,48 +981,46 @@ export default function DIYPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-end gap-2">
-            <button
-              className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
-              onClick={refresh}
-              type="button"
-            >
-              refresh
-            </button>
+          {/* ✅ boutons sur UNE ligne (desktop) */}
+          <div className="col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
+            <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+              <button
+                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                onClick={refresh}
+                type="button"
+              >
+                refresh
+              </button>
 
-            <button
-              className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
-              onClick={downloadPDF}
-              type="button"
-            >
-              download pdf
-            </button>
+              <button
+                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                onClick={downloadPDF}
+                type="button"
+              >
+                download pdf
+              </button>
 
-            {/* <button
-              className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
-              onClick={downloadVideo}
-              type="button"
-            >
-              download video (15s)
-            </button> */}
+              <button
+                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                onClick={removeSelected}
+                type="button"
+              >
+                remove
+              </button>
 
-            <button
-              className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
-              onClick={removeSelected}
-              type="button"
-            >
-              remove
-            </button>
-
-            <button
-              className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest"
-              onClick={clear}
-              type="button"
-            >
-              clear
-            </button>
+              <button
+                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                onClick={clear}
+                type="button"
+              >
+                clear
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* ✅ séparateur comme les autres pages */}
+        <div className="mt-6 border-t border-zinc-200" />
 
         <div className="mt-4">
           <div
@@ -1217,6 +1222,7 @@ export default function DIYPage() {
 
         <div className="h-24" />
       </div>
-    </main>
-  );
+    </div>
+  </main>
+);
 }
