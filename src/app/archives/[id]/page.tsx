@@ -3,6 +3,10 @@ import { getReferenceById } from "@/lib/references";
 import type { TPLMedia, TPLReference } from "@/lib/schema";
 import { buildPublicUrl } from "@/lib/media";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function formatYear(r: TPLReference): string {
   if (r.year) return String(r.year);
   if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
@@ -20,6 +24,16 @@ function MetaCell({ label, value }: { label: string; value: string }) {
   );
 }
 
+function safePublicUrl(src: string): string {
+  // Si buildPublicUrl dépend d'env vars (Supabase) et qu'elles manquent sur Vercel,
+  // on ne veut PAS faire échouer le build: fallback sur le src brut.
+  try {
+    return buildPublicUrl(src);
+  } catch {
+    return src;
+  }
+}
+
 function MediaBlock({ media, title }: { media?: TPLMedia; title: string }) {
   if (!media) {
     return (
@@ -29,7 +43,9 @@ function MediaBlock({ media, title }: { media?: TPLMedia; title: string }) {
     );
   }
 
-  const url = buildPublicUrl(media.src);
+  const url = safePublicUrl(media.src);
+  const poster =
+    "poster" in media && media.poster ? safePublicUrl(media.poster) : undefined;
 
   if (media.kind === "video") {
     return (
@@ -38,7 +54,7 @@ function MediaBlock({ media, title }: { media?: TPLMedia; title: string }) {
         controls
         playsInline
         preload="metadata"
-        poster={media.poster}
+        poster={poster}
       >
         <source src={url} />
       </video>
@@ -65,9 +81,9 @@ function MediaBlock({ media, title }: { media?: TPLMedia; title: string }) {
 export default async function ArchiveReferencePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
+  const { id } = params;
 
   const r = getReferenceById(id);
   if (!r) return notFound();
