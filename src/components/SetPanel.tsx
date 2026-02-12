@@ -9,7 +9,6 @@ export default function SetPanel({ refs }: { refs: ReferenceItem[] }) {
 
   useEffect(() => {
     const onStorage = () => {
-      // décale pour satisfaire la règle ESLint
       queueMicrotask(() => setItems(loadSet()));
     };
     window.addEventListener("storage", onStorage);

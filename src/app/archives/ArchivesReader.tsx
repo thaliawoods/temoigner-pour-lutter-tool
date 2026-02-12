@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { TPLReference } from "@/lib/schema";
+import { useEffect, useMemo, useState } from "react";
+import type { TPLReference, TPLMedia } from "@/lib/schema";
 import { getAllReferences } from "@/lib/references";
+import { buildPublicUrl, guessMediaForReference, listBucketMedia } from "@/lib/media";
 
 function prettyType(t: string) {
   return t.replaceAll("_", " ");
@@ -20,29 +21,40 @@ function sortKey(r: TPLReference) {
   return Number.NEGATIVE_INFINITY;
 }
 
-function MediaCenter({ r }: { r: TPLReference }) {
-  if (r.media?.kind === "image") {
+function renderMedia(media: TPLMedia | undefined, title: string) {
+  if (!media) return <div className="h-full w-full bg-zinc-50" />;
+
+  const url = buildPublicUrl(media.src);
+
+  if (media.kind === "image") {
     return (
       <img
-        src={r.media.src}
-        alt={r.media.alt ?? r.title}
+        src={url}
+        alt={media.alt ?? title}
         className="h-full w-full object-cover"
       />
     );
   }
 
-  if (r.media?.kind === "video") {
+  if (media.kind === "video") {
     return (
       <video
-        src={r.media.src}
+        src={url}
         className="h-full w-full object-cover"
         muted
         playsInline
+        controls
+        preload="metadata"
+        poster={media.poster}
       />
     );
   }
 
-  return <div className="h-full w-full bg-zinc-50" />;
+  return (
+    <div className="h-full w-full flex items-center justify-center bg-zinc-50">
+      <audio src={url} controls preload="metadata" className="w-[92%]" />
+    </div>
+  );
 }
 
 export default function ArchivesReader() {
@@ -64,11 +76,44 @@ export default function ArchivesReader() {
     });
   }, []);
 
+  const [poolReady, setPoolReady] = useState(false);
+  const [mediaPool, setMediaPool] = useState<Awaited<ReturnType<typeof listBucketMedia>> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      try {
+        const next = await listBucketMedia();
+        if (cancelled) return;
+        setMediaPool(next);
+        setPoolReady(true);
+      } catch {
+        if (cancelled) return;
+        setPoolReady(true);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const enriched = useMemo(() => {
+    if (!mediaPool) return refs;
+    return refs.map((r) => {
+      if (r.media) return r;
+      const guessed = guessMediaForReference(r, mediaPool);
+      return guessed ? { ...r, media: guessed } : r;
+    });
+  }, [refs, mediaPool]);
+
   const [selectedId, setSelectedId] = useState<string>(() => refs[0]?.id ?? "");
 
   const selected = useMemo(
-    () => refs.find((r) => r.id === selectedId) ?? refs[0],
-    [refs, selectedId]
+    () => enriched.find((r) => r.id === selectedId) ?? enriched[0],
+    [enriched, selectedId]
   );
 
   return (
@@ -80,14 +125,14 @@ export default function ArchivesReader() {
           </div>
           <h1 className="mt-2 text-3xl font-medium">bibliothèque</h1>
           <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-            sélectionner une référence pour afficher l’image/vidéo et les infos.
+            sélectionner une référence pour afficher l’image/vidéo/audio et les infos.
           </p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,520px)_1fr] gap-0 border border-zinc-200">
           <aside className="border-b lg:border-b-0 lg:border-r border-zinc-200">
             <div className="max-h-[calc(100vh-220px)] overflow-auto">
-              {refs.map((r) => {
+              {enriched.map((r) => {
                 const active = r.id === selected?.id;
                 return (
                   <button
@@ -131,8 +176,11 @@ export default function ArchivesReader() {
 
           <section className="border-b lg:border-b-0 lg:border-r border-zinc-200 bg-white">
             <div className="h-[520px] w-full">
-              {selected ? <MediaCenter r={selected} /> : null}
+              {selected ? renderMedia(selected.media, selected.title) : null}
             </div>
+            {!poolReady ? (
+              <div className="p-4 text-sm text-zinc-500">loading media…</div>
+            ) : null}
           </section>
 
           <section className="bg-white">
@@ -160,8 +208,7 @@ export default function ArchivesReader() {
                     <p>{selected.notes}</p>
                   ) : (
                     <p className="text-zinc-400">
-                      (texte / description à renseigner — ici on mettra aussi les
-                      liens, bibliographie, tags)
+                      (texte / description à renseigner — ici on mettra aussi les liens, bibliographie, tags)
                     </p>
                   )}
                 </div>

@@ -1,4 +1,3 @@
-// src/lib/references.ts
 import data from "@/data/references.v0.json";
 import type { TPLSchema, TPLReference } from "@/lib/schema";
 
@@ -40,11 +39,9 @@ export function getReferenceById(id: string): TPLReference | undefined {
 
   const decoded = safeDecode(id);
 
-  // match direct
   const direct = refs.find((r) => r.id === decoded);
   if (direct) return direct;
 
-  // fallback normalisé
   const norm = normalizeId(decoded);
   return refs.find((r) => normalizeId(r.id) === norm);
 }
@@ -62,9 +59,9 @@ function normalizeId(v: string) {
     .trim()
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "") // diacritiques
-    .replace(/[’']/g, "-") // apostrophes -> tiret
-    .replace(/[^a-z0-9-]/g, "-") // reste -> tiret
+    .replace(/[\u0300-\u036f]/g, "") 
+    .replace(/[’']/g, "-") 
+    .replace(/[^a-z0-9-]/g, "-") 
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 }

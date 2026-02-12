@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getReferenceById } from "@/lib/references";
-import type { TPLReference } from "@/lib/schema";
+import type { TPLMedia, TPLReference } from "@/lib/schema";
+import { buildPublicUrl } from "@/lib/media";
 
 function formatYear(r: TPLReference): string {
   if (r.year) return String(r.year);
@@ -19,12 +20,54 @@ function MetaCell({ label, value }: { label: string; value: string }) {
   );
 }
 
+function MediaBlock({ media, title }: { media?: TPLMedia; title: string }) {
+  if (!media) {
+    return (
+      <div className="w-full aspect-[16/9] bg-zinc-100 flex items-center justify-center">
+        <span className="mono text-xs text-zinc-600">no media</span>
+      </div>
+    );
+  }
+
+  const url = buildPublicUrl(media.src);
+
+  if (media.kind === "video") {
+    return (
+      <video
+        className="w-full aspect-[16/9] bg-zinc-100"
+        controls
+        playsInline
+        preload="metadata"
+        poster={media.poster}
+      >
+        <source src={url} />
+      </video>
+    );
+  }
+
+  if (media.kind === "image") {
+    return (
+      <img
+        src={url}
+        alt={media.alt ?? title}
+        className="w-full aspect-[16/9] object-cover bg-zinc-100"
+      />
+    );
+  }
+
+  return (
+    <div className="w-full aspect-[16/9] bg-zinc-100 flex items-center justify-center">
+      <audio src={url} controls preload="metadata" className="w-[92%]" />
+    </div>
+  );
+}
+
 export default async function ArchiveReferencePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; 
+  const { id } = await params;
 
   const r = getReferenceById(id);
   if (!r) return notFound();
@@ -39,31 +82,8 @@ export default async function ArchiveReferencePage({
         <h1 className="mt-2 text-2xl font-medium">{r.title}</h1>
 
         <div className="mt-6 border border-zinc-300">
-          {/* MEDIA */}
           <div className="border-b border-zinc-300 bg-white">
-            {r.media?.kind === "video" ? (
-              <video
-                className="w-full aspect-[16/9] bg-zinc-100"
-                controls
-                playsInline
-                preload="metadata"
-                poster={r.media.poster}
-              >
-                <source src={r.media.src} />
-              </video>
-            ) : r.media?.kind === "image" ? (
-              <img
-                src={r.media.src}
-                alt={r.media.alt ?? r.title}
-                className="w-full aspect-[16/9] object-cover bg-zinc-100"
-              />
-            ) : (
-              <div className="w-full aspect-[16/9] bg-zinc-100 flex items-center justify-center">
-                <span className="mono text-xs text-zinc-600">
-                  no media
-                </span>
-              </div>
-            )}
+            <MediaBlock media={r.media} title={r.title} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3">

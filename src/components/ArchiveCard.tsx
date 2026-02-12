@@ -1,4 +1,3 @@
-// src/components/ArchiveCard.tsx
 import Link from "next/link";
 import type { TPLReference } from "@/lib/schema";
 

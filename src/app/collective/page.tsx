@@ -41,7 +41,6 @@ export default function CollectivePage() {
         <h1 className="mt-3 text-3xl font-semibold">Ely &amp; Marion Collective</h1>
 
         <div className="mt-8 grid gap-10 md:grid-cols-3">
-          {/* LEFT (main text) */}
           <div className="md:col-span-2 space-y-8 text-[15px] leading-relaxed text-zinc-800">
             <p>
               Le duo <span className="font-medium">Ely &amp; Marion</span> est né
@@ -130,7 +129,6 @@ export default function CollectivePage() {
             </div>
           </div>
 
-          {/* RIGHT (contacts + timeline) */}
           <aside className="space-y-8">
             <div className="border border-zinc-200 p-4">
               <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">

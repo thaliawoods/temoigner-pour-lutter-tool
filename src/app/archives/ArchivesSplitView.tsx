@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { TPLReference } from "@/lib/schema";
+import { useEffect, useMemo, useState } from "react";
+import type { TPLMedia, TPLReference } from "@/lib/schema";
 import { getAllReferences } from "@/lib/references";
+import { buildPublicUrl, guessMediaForReference, listBucketMedia } from "@/lib/media";
 
 function prettyType(t: string) {
   return t.replaceAll("_", " ");
@@ -15,20 +16,32 @@ function formatYear(r: TPLReference): string {
 }
 
 function hasMedia(r: TPLReference) {
-  return r.media?.kind === "image" || r.media?.kind === "video";
+  return Boolean(r.media);
 }
 
 function MediaHero({ r }: { r: TPLReference }) {
-  if (r.media?.kind === "image") {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={r.media.src} alt={r.media.alt ?? r.title} className="h-full w-full object-cover" />;
+  const media = r.media;
+  if (!media) {
+    return (
+      <div className="h-full w-full flex items-center justify-center mono text-[11px] uppercase tracking-widest text-zinc-500">
+        no media
+      </div>
+    );
   }
-  if (r.media?.kind === "video") {
-    return <video src={r.media.src} className="h-full w-full object-cover" muted playsInline />;
+
+  const url = buildPublicUrl(media.src);
+
+  if (media.kind === "image") {
+    return <img src={url} alt={media.alt ?? r.title} className="h-full w-full object-cover" />;
   }
+
+  if (media.kind === "video") {
+    return <video src={url} className="h-full w-full object-cover" muted playsInline controls preload="metadata" poster={media.poster} />;
+  }
+
   return (
-    <div className="h-full w-full flex items-center justify-center mono text-[11px] uppercase tracking-widest text-zinc-500">
-      no media
+    <div className="h-full w-full flex items-center justify-center bg-zinc-50">
+      <audio src={url} controls preload="metadata" className="w-[92%]" />
     </div>
   );
 }
@@ -38,25 +51,56 @@ export default function ArchivesSplitView() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string>(() => refs[0]?.id ?? "");
 
+  const [mediaPool, setMediaPool] = useState<Awaited<ReturnType<typeof listBucketMedia>> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      try {
+        const next = await listBucketMedia();
+        if (cancelled) return;
+        setMediaPool(next);
+      } catch {
+        if (cancelled) return;
+        setMediaPool(null);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const enriched = useMemo(() => {
+    if (!mediaPool) return refs;
+    return refs.map((r) => {
+      if (r.media) return r;
+      const guessed = guessMediaForReference(r, mediaPool);
+      return guessed ? { ...r, media: guessed } : r;
+    });
+  }, [refs, mediaPool]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return refs;
-    return refs.filter((r) => {
+    if (!q) return enriched;
+    return enriched.filter((r) => {
       const hay = `${r.title} ${r.creator ?? ""} ${r.location ?? ""} ${r.type}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [refs, query]);
+  }, [enriched, query]);
 
-  const selected = useMemo(() => filtered.find((r) => r.id === selectedId) ?? filtered[0], [filtered, selectedId]);
+  const selected = useMemo(
+    () => filtered.find((r) => r.id === selectedId) ?? filtered[0],
+    [filtered, selectedId]
+  );
 
   return (
     <div className="min-h-[calc(100vh-120px)] bg-white text-zinc-900">
       <div className="mx-auto max-w-[1400px] px-6 py-8">
-        {/* Split */}
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] border border-zinc-200">
-          {/* LEFT: LIST */}
           <aside className="border-b lg:border-b-0 lg:border-r border-zinc-200">
-            {/* Filters / search */}
             <div className="p-4 border-b border-zinc-200 bg-white sticky top-[72px] z-10">
               <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
                 archives
@@ -74,7 +118,6 @@ export default function ArchivesSplitView() {
               </div>
             </div>
 
-            {/* List scroll */}
             <div className="max-h-[calc(100vh-220px)] overflow-auto">
               {filtered.map((r) => {
                 const active = r.id === selected?.id;
@@ -109,16 +152,13 @@ export default function ArchivesSplitView() {
             </div>
           </aside>
 
-          {/* RIGHT: DETAIL */}
           <section className="bg-white">
             {selected ? (
               <div className="min-h-[60vh]">
-                {/* Hero media */}
                 <div className="aspect-[16/9] border-b border-zinc-200 bg-zinc-100">
                   <MediaHero r={selected} />
                 </div>
 
-                {/* Content */}
                 <div className="p-6">
                   <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
                     {prettyType(selected.type)} · {formatYear(selected)}
@@ -156,7 +196,6 @@ export default function ArchivesSplitView() {
                     </div>
                   </div>
 
-                  {/* Notes / placeholder long text */}
                   <div className="mt-6 max-w-3xl text-sm leading-relaxed text-zinc-800">
                     {selected.notes?.trim() ? (
                       <p>{selected.notes}</p>
@@ -167,7 +206,6 @@ export default function ArchivesSplitView() {
                     )}
                   </div>
 
-                  {/* Source */}
                   {selected.sourceLabel || selected.sourceUrl ? (
                     <div className="mt-6 text-sm">
                       <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">

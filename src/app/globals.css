@@ -11,13 +11,11 @@ body {
   color: var(--foreground);
 }
 
-/* ancienne police = système */
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-/* zéro arrondis */
 input, select, textarea, button {
   border-radius: 0 !important;
 }
@@ -34,4 +32,25 @@ html, body {
 
 body {
   overflow-x: hidden;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  [data-print-target="true"],
+  [data-print-target="true"] * {
+    visibility: visible !important;
+  }
+
+  [data-print-target="true"] {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+  }
+
+  @page {
+    margin: 12mm;
+  }
 }

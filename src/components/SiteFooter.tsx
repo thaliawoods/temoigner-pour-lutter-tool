@@ -1,4 +1,3 @@
-// src/components/SiteFooter.tsx
 import Link from "next/link";
 import { getSchema } from "@/lib/references";
 
@@ -6,14 +5,13 @@ export default function SiteFooter() {
   const schema = getSchema();
 
   const instagramUrl = "https://www.instagram.com/ely.marion.collective/";
-  const igLabel = schema.credits?.contact.instagram; // si tu l’as dans ton schema (sinon on affiche juste le lien)
+  const igLabel = schema.credits?.contact.instagram; 
   const email = schema.credits?.contact.email;
 
   return (
     <footer className="border-t border-zinc-200 bg-white">
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-8 md:grid-cols-3">
-          {/* CONTACT */}
           <div>
             <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
               contact
@@ -35,7 +33,6 @@ export default function SiteFooter() {
             </div>
           </div>
 
-          {/* PAGES */}
           <div>
             <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
               pages
@@ -65,7 +62,6 @@ export default function SiteFooter() {
             </div>
           </div>
 
-          {/* CREDIT */}
           <div>
             <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
               credits
@@ -75,7 +71,7 @@ export default function SiteFooter() {
               Ely &amp; Marion Collective
             </div>
             <div className="mt-3 text-sm text-zinc-700">
-              Thalia Woods
+              Site Web : Thalia Woods
             </div>
           </div>
         </div>

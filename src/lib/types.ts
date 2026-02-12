@@ -17,10 +17,10 @@ export type ReferenceItem = {
   type: ReferenceType;
 
   auteur?: string;
-  source?: string; // nom de la source
-  url?: string;    // lien externe (optionnel)
+  source?: string; 
+  url?: string;  
   annee?: number;
-  date?: string;   // ISO "YYYY-MM-DD" si besoin
+  date?: string; 
   langue?: string;
   dureeSec?: number;
 
@@ -31,19 +31,18 @@ export type ReferenceItem = {
   droits?: Rights;
   restrictions?: string[];
 
-  // médias locaux (recommandé pour perf)
   media?: {
-    audioSrc?: string; // ex: "/media/audio/xxx.mp3"
+    audioSrc?: string; 
     videoSrc?: string;
     imageSrc?: string;
-    texte?: string;    // pour citations/lectures
+    texte?: string;   
   };
 
   perf?: {
     modes?: Array<"oneShot" | "loop">;
     intensite?: Intensity;
     notes?: string;
-    compatAvec?: string[];   // ids
-    eviterAvec?: string[];   // ids
+    compatAvec?: string[];   
+    eviterAvec?: string[];   
   };
 };

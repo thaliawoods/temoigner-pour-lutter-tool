@@ -1,5 +1,3 @@
-// src/lib/schema.ts
-
 export type TPLType =
   | "collectif"
   | "film"
@@ -15,7 +13,8 @@ export type YearRange = { start: number; end: number };
 
 export type TPLMedia =
   | { kind: "image"; src: string; alt?: string }
-  | { kind: "video"; src: string; poster?: string };
+  | { kind: "video"; src: string; poster?: string }
+  | { kind: "audio"; src: string; title?: string };
 
 export type TPLReference = {
   id: string;

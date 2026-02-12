@@ -48,12 +48,10 @@ export default function SiteHeader({
 
   const isActive = (href: string) => path === href;
 
-  // ===== Overlay (home) =====
   if (variant === "overlay") {
     return (
       <header className="absolute inset-x-0 top-0 z-50 text-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 sm:py-6">
-          {/* Mobile */}
           <div className="sm:hidden">
             <div className="flex items-start justify-between gap-4">
               <NavItem
@@ -97,7 +95,6 @@ export default function SiteHeader({
             </div>
           </div>
 
-          {/* Desktop */}
           <div className="hidden sm:block">
             <div className="grid grid-cols-3 items-start gap-4">
               <NavItem
@@ -146,11 +143,9 @@ export default function SiteHeader({
     );
   }
 
-  // ===== Bar (all pages) =====
   return (
     <header className="w-full border-b border-zinc-200 bg-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-4">
-        {/* Mobile */}
         <div className="sm:hidden">
           <div className="flex items-start justify-between gap-4">
             <NavItem
@@ -194,7 +189,6 @@ export default function SiteHeader({
           </div>
         </div>
 
-        {/* Desktop (ton layout actuel) */}
         <div className="hidden sm:grid grid-cols-3 items-center gap-4">
           <NavItem
             href="/"

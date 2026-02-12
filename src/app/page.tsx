@@ -9,7 +9,7 @@ const BUCKET = "tpl-web";
 
 type MediaItem = {
   type: "image" | "video";
-  path: string; // ex: "image/xxx.png" ou "video/xxx.mp4"
+  path: string; 
 };
 
 type Tile = {
@@ -32,9 +32,7 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
-// --- Supabase singleton (évite “Multiple GoTrueClient instances” en dev/HMR) ---
 declare global {
-  // eslint-disable-next-line no-var
   var __tpl_supabase__: SupabaseClient | undefined;
 }
 
@@ -51,7 +49,6 @@ function buildPublicUrl(supabase: SupabaseClient, path: string): string {
   return data.publicUrl;
 }
 
-// petit “random” déterministe (stable au refresh)
 function seeded01(seed: number): number {
   const x = Math.sin(seed * 9999) * 10000;
   return x - Math.floor(x);
@@ -60,7 +57,6 @@ function seeded01(seed: number): number {
 function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Tile[] {
   const count = media.length;
 
-  // Option B: le “spread” du nuage dépend du nb de médias
   const spread = clamp(250 + count * 10, 350, 2200);
 
   const baseW = viewportW > 900 ? 220 : 160;
@@ -75,7 +71,6 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
     const w = Math.round((baseW + r3 * 160) * sizeBoost);
     const h = Math.round((baseH + r1 * 140) * sizeBoost);
 
-    // centre + nuage
     const x = Math.round(viewportW * 0.35 + (r1 - 0.5) * spread);
     const y = Math.round(viewportH * 0.55 + (r2 - 0.5) * spread);
 
@@ -100,7 +95,6 @@ export default function HomePage() {
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
-  // drag tile
   const dragTileRef = useRef<{
     id: string;
     startX: number;
@@ -109,7 +103,6 @@ export default function HomePage() {
     tileY: number;
   } | null>(null);
 
-  // pan canvas
   const panRef = useRef<{
     startX: number;
     startY: number;
@@ -174,7 +167,6 @@ export default function HomePage() {
     };
   }, [supabase]);
 
-  // regen tiles when media changes or viewport changes
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -219,7 +211,6 @@ export default function HomePage() {
   }
 
   function onCanvasPointerDown(e: React.PointerEvent) {
-    // click on background => pan
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
     panRef.current = {
       startX: e.clientX,
@@ -230,7 +221,6 @@ export default function HomePage() {
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    // tile drag
     if (dragTileRef.current) {
       const d = dragTileRef.current;
       const dx = (e.clientX - d.startX) / view.scale;
@@ -242,7 +232,6 @@ export default function HomePage() {
       return;
     }
 
-    // pan
     if (panRef.current) {
       const p = panRef.current;
       const dx = e.clientX - p.startX;
@@ -257,19 +246,16 @@ export default function HomePage() {
     try {
       (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
     } catch {
-      // ignore
     }
   }
 
   function onWheel(e: React.WheelEvent) {
-    // zoom doux au wheel (trackpad-friendly)
-    if (e.ctrlKey) return; // laisse pinch-zoom navigateur si besoin
+    if (e.ctrlKey) return; 
     e.preventDefault();
 
     const delta = -e.deltaY;
     const nextScale = clamp(view.scale + delta * 0.001, 0.35, 2.2);
 
-    // zoom towards cursor
     const el = containerRef.current;
     if (!el) {
       setView((v) => ({ ...v, scale: nextScale }));
@@ -295,7 +281,6 @@ export default function HomePage() {
 
   return (
     <main className="w-full">
-      {/* HERO (comme avant) */}
       <section className="px-6 pt-10 pb-6 max-w-[1400px]">
         <div className="mono text-[11px] tracking-[0.22em] uppercase opacity-60">
           ELY &amp; MARION COLLECTIVE

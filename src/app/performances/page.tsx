@@ -1,4 +1,3 @@
-// src/app/performances/page.tsx
 import Link from "next/link";
 
 type Performance = {
@@ -7,7 +6,7 @@ type Performance = {
   year?: number;
   location?: string;
   credits?: string;
-  videoSrc?: string | null; // tu rempliras après
+  videoSrc?: string | null; 
 };
 
 const PERFORMANCES: Performance[] = [
@@ -71,7 +70,6 @@ export default function PerformancesPage() {
         <div className="mt-10 space-y-12">
           {PERFORMANCES.map((p) => (
             <article key={p.id} className="border border-zinc-200 bg-white">
-              {/* grande “video” */}
               <div className="w-full bg-zinc-50 border-b border-zinc-200">
                 {p.videoSrc ? (
                   <video
@@ -89,7 +87,6 @@ export default function PerformancesPage() {
                 )}
               </div>
 
-              {/* infos */}
               <div className="p-5 sm:p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
                   <h2 className="text-xl font-medium leading-snug">{p.title}</h2>
@@ -109,10 +106,6 @@ export default function PerformancesPage() {
                   <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
                     note
                   </span>{" "}
-                  {/* — quand tu as la vidéo : mets le fichier dans{" "}
-                  <code>public/media/performances/</code> et remplace{" "}
-                  <code>videoSrc</code> par{" "}
-                  <code>"/media/performances/nom.mp4"</code>. */}
                 </div>
               </div>
             </article>

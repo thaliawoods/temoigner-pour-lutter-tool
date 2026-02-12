@@ -1,11 +1,10 @@
-// src/components/ReferenceList.tsx
 "use client";
 
 import { useMemo, useState } from "react";
 import type { TPLReference, TPLType } from "@/lib/schema";
 import ReferenceCard from "@/components/ReferenceCard";
 
-type IntensityOrAll = "all" | "faible" | "moyenne" | "forte"; // (pour plus tard)
+type IntensityOrAll = "all" | "faible" | "moyenne" | "forte"; 
 
 export default function ReferenceList({
   data,
@@ -16,7 +15,7 @@ export default function ReferenceList({
 }) {
   const [q, setQ] = useState("");
   const [type, setType] = useState<TPLType | "all">("all");
-  const [intensity] = useState<IntensityOrAll>("all"); // placeholder (pas dans ton schéma v0)
+  const [intensity] = useState<IntensityOrAll>("all"); 
 
   const parseType = (v: string): TPLType | "all" => {
     if (
@@ -40,9 +39,7 @@ export default function ReferenceList({
     return data.filter((r) => {
       if (type !== "all" && r.type !== type) return false;
 
-      // intensité pas encore dispo dans ton schéma v0 → on laisse la variable pour plus tard
       if (intensity !== "all") {
-        // no-op
       }
 
       if (!needle) return true;
