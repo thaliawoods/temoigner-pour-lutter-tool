@@ -25,8 +25,6 @@ function MetaCell({ label, value }: { label: string; value: string }) {
 }
 
 function safePublicUrl(src: string): string {
-  // Si buildPublicUrl dépend d'env vars (Supabase) et qu'elles manquent sur Vercel,
-  // on ne veut PAS faire échouer le build: fallback sur le src brut.
   try {
     return buildPublicUrl(src);
   } catch {

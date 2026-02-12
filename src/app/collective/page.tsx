@@ -103,7 +103,6 @@ function ContactBlock() {
           </div>
         </div>
 
-        {/* optionnel: petit padding bas, mais pas trop */}
         <div className="py-2" />
       </div>
     </div>
@@ -113,7 +112,6 @@ function ContactBlock() {
 export default function CollectivePage() {
   return (
     <main className="w-full">
-      {/* HERO */}
       <div className="mx-auto w-full max-w-[1120px] px-6 pt-10 pb-6">
         <div className="grid grid-cols-12 gap-6 items-start">
           <div className="col-span-12 md:col-span-7">
@@ -141,7 +139,6 @@ export default function CollectivePage() {
         </div>
       </div>
 
-      {/* SECTIONS */}
       <div className="border-t border-black/10 divide-y divide-black/10">
         <Section id="a-propos" title="à propos">
           <div className="divide-y divide-black/10">

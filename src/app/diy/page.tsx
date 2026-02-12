@@ -969,7 +969,6 @@ return (
               do it yourself
             </div>
 
-            {/* ✅ plus petit, plus proche des autres pages */}
             <h1 className="mt-3 text-[30px] leading-[1.15] font-semibold tracking-tight">
               drag → compose → export
             </h1>
@@ -981,7 +980,6 @@ return (
             </div>
           </div>
 
-          {/* ✅ boutons sur UNE ligne (desktop) */}
           <div className="col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
             <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
               <button
@@ -1019,7 +1017,6 @@ return (
           </div>
         </div>
 
-        {/* ✅ séparateur comme les autres pages */}
         <div className="mt-6 border-t border-zinc-200" />
 
         <div className="mt-4">

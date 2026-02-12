@@ -1,14 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as supabaseUntyped } from "@/lib/supabase/client";
 
-// ✅ typage safe
 const supabase = supabaseUntyped as unknown as SupabaseClient;
 
 export const BUCKET = "tpl-web";
 
 export type BucketKind = "image" | "video" | "audio";
 
-// ✅ alias pratique pour le DIY (si tu importais MediaKind)
 export type MediaKind = BucketKind;
 
 export type BucketFile = {
@@ -81,7 +79,6 @@ export async function listBucketMedia() {
   return out;
 }
 
-// --------- schema types (compat) ---------
 export type TPLType =
   | "collectif"
   | "film"
