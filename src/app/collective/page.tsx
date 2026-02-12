@@ -53,7 +53,7 @@ function Row({
 function ContactBlock() {
   return (
     <div className="w-full md:max-w-[420px]">
-<div className="divide-y divide-black/10 border-t border-black/10">
+      <div className="divide-y divide-black/10 border-t border-black/10">
         <div className="grid grid-cols-12 gap-6 py-4">
           <div className="col-span-12 md:col-span-4">
             <div className="mono text-[11px] uppercase tracking-widest text-black/60">
@@ -127,8 +127,8 @@ export default function CollectivePage() {
               Le duo Ely &amp; Marion est né avec l’intention de créer un outil
               de diffusion des luttes féministes. La collective est composée de
               deux jeunes artistes, <strong>Elyette Gauthier</strong> et{" "}
-              <strong>Marion Serclérat</strong>, récemment diplômées du DNSEP Art
-              contemporain — Design contemporain, mention Espace, à l’École
+              <strong>Marion Serclérat</strong>, récemment diplômées du DNSEP
+              Art contemporain — Design contemporain, mention Espace, à l’École
               d’Art et de Design de Saint-Étienne.
             </p>
           </div>
@@ -156,10 +156,10 @@ export default function CollectivePage() {
         <Section id="artistes" title="artistes">
           <div className="divide-y divide-black/10">
             <Row label="elyette gauthier">
-              Artiste pluridisciplinaire (sculpture, graphisme, édition, estampe,
-              performance, son). Elle explore la création sonore via le montage
-              live d’échantillons, l’enregistrement audio et le mix, avec
-              l’objectif de concevoir des espaces inclusifs au sein
+              Artiste pluridisciplinaire (sculpture, graphisme, édition,
+              estampe, performance, son). Elle explore la création sonore via le
+              montage live d’échantillons, l’enregistrement audio et le mix,
+              avec l’objectif de concevoir des espaces inclusifs au sein
               d’environnements immersifs. Son travail interroge aussi la
               représentation des corps sexisés dans l’espace public et les
               dynamiques de domination / appropriation des lieux.
@@ -206,9 +206,17 @@ export default function CollectivePage() {
                 <span className="text-black/40">·</span>
                 <Link
                   className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                  href="/live"
+                  href="/diy"
                 >
-                  Live
+                  Do It Yourself
+                </Link>
+                <span className="text-black/40">·</span>
+
+                <Link
+                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                  href="/performances"
+                >
+                  Performances
                 </Link>
               </span>
             </Row>
