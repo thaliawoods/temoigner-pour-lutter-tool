@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 
 function Section({
@@ -12,7 +13,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="border-t border-black/10 py-6">
+    <section id={id} className="py-5">
       <div className="mx-auto w-full max-w-[1120px] px-6">
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 md:col-span-3">
@@ -20,10 +21,8 @@ function Section({
               {title}
             </div>
           </div>
-          <div className="col-span-12 md:col-span-9">
-            <div className="border-t border-black/10" />
-            <div className="mt-4">{children}</div>
-          </div>
+
+          <div className="col-span-12 md:col-span-9">{children}</div>
         </div>
       </div>
     </section>
@@ -38,7 +37,7 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-12 gap-6 border-b border-black/10 py-4">
+    <div className="grid grid-cols-12 gap-6 py-3">
       <div className="col-span-12 md:col-span-3">
         <div className="mono text-[11px] uppercase tracking-widest text-black/55">
           {label}
@@ -54,53 +53,58 @@ function Row({
 function ContactBlock() {
   return (
     <div className="w-full md:max-w-[420px]">
-      <div className="border-t border-black/10" />
-      <div className="grid grid-cols-12 gap-6 py-4 border-b border-black/10">
-        <div className="col-span-12 md:col-span-4">
-          <div className="mono text-[11px] uppercase tracking-widest text-black/60">
-            contact
-          </div>
-        </div>
-        <div className="col-span-12 md:col-span-8">
-          <div className="space-y-3 text-[14px] leading-6">
-            <div>
-              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
-                email
-              </div>
-              <a
-                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                href="mailto:elymarioncollective@gmail.com"
-              >
-                elymarioncollective@gmail.com
-              </a>
-            </div>
-
-            <div>
-              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
-                instagram
-              </div>
-              <a
-                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                href="https://instagram.com/ely.marion.collective"
-                target="_blank"
-                rel="noreferrer"
-              >
-                @ely.marion.collective
-              </a>
-            </div>
-
-            <div>
-              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
-                phones
-              </div>
-              <div className="text-black/90">
-                Ely : <span className="mono">06 32 33 71 02</span>
-                <br />
-                Marion : <span className="mono">06 27 62 41 43</span>
-              </div>
+<div className="divide-y divide-black/10 border-t border-black/10">
+        <div className="grid grid-cols-12 gap-6 py-4">
+          <div className="col-span-12 md:col-span-4">
+            <div className="mono text-[11px] uppercase tracking-widest text-black/60">
+              contact
             </div>
           </div>
+
+          <div className="col-span-12 md:col-span-8">
+            <div className="space-y-3 text-[14px] leading-6">
+              <div>
+                <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                  email
+                </div>
+                <a
+                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                  href="mailto:elymarioncollective@gmail.com"
+                >
+                  elymarioncollective@gmail.com
+                </a>
+              </div>
+
+              <div>
+                <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                  instagram
+                </div>
+                <a
+                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                  href="https://instagram.com/ely.marion.collective"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  @ely.marion.collective
+                </a>
+              </div>
+
+              <div>
+                <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                  phones
+                </div>
+                <div className="text-black/90">
+                  Ely : <span className="mono">06 32 33 71 02</span>
+                  <br />
+                  Marion : <span className="mono">06 27 62 41 43</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* optionnel: petit padding bas, mais pas trop */}
+        <div className="py-2" />
       </div>
     </div>
   );
@@ -110,7 +114,7 @@ export default function CollectivePage() {
   return (
     <main className="w-full">
       {/* HERO */}
-      <div className="mx-auto w-full max-w-[1120px] px-6 pt-12 pb-6">
+      <div className="mx-auto w-full max-w-[1120px] px-6 pt-10 pb-6">
         <div className="grid grid-cols-12 gap-6 items-start">
           <div className="col-span-12 md:col-span-7">
             <div className="mono text-[11px] uppercase tracking-widest text-black/60">
@@ -137,109 +141,110 @@ export default function CollectivePage() {
         </div>
       </div>
 
-      {/* À PROPOS */}
-      <Section id="a-propos" title="à propos">
-        <div className="border-t border-black/10">
-          <Row label="mission">
-            Créer un outil de diffusion des luttes féministes.
-          </Row>
-          <Row label="composition">Elyette Gauthier · Marion Serclérat</Row>
-          <Row label="formation">
-            DNSEP Art contemporain — Design contemporain, mention Espace
-            (ESADSE).
-          </Row>
-        </div>
-      </Section>
+      {/* SECTIONS */}
+      <div className="border-t border-black/10 divide-y divide-black/10">
+        <Section id="a-propos" title="à propos">
+          <div className="divide-y divide-black/10">
+            <Row label="mission">
+              Créer un outil de diffusion des luttes féministes.
+            </Row>
+            <Row label="composition">Elyette Gauthier · Marion Serclérat</Row>
+            <Row label="formation">
+              DNSEP Art contemporain — Design contemporain, mention Espace
+              (ESADSE).
+            </Row>
+          </div>
+        </Section>
 
-      {/* ARTISTES */}
-      <Section id="artistes" title="artistes">
-        <div className="border-t border-black/10">
-          <Row label="elyette gauthier">
-            Artiste pluridisciplinaire (sculpture, graphisme, édition, estampe,
-            performance, son). Elle explore la création sonore via le montage
-            live d’échantillons, l’enregistrement audio et le mix, avec
-            l’objectif de concevoir des espaces inclusifs au sein
-            d’environnements immersifs. Son travail interroge aussi la
-            représentation des corps sexisés dans l’espace public et les
-            dynamiques de domination / appropriation des lieux.
-          </Row>
+        <Section id="artistes" title="artistes">
+          <div className="divide-y divide-black/10">
+            <Row label="elyette gauthier">
+              Artiste pluridisciplinaire (sculpture, graphisme, édition, estampe,
+              performance, son). Elle explore la création sonore via le montage
+              live d’échantillons, l’enregistrement audio et le mix, avec
+              l’objectif de concevoir des espaces inclusifs au sein
+              d’environnements immersifs. Son travail interroge aussi la
+              représentation des corps sexisés dans l’espace public et les
+              dynamiques de domination / appropriation des lieux.
+            </Row>
 
-          <Row label="marion serclérat">
-            Professeure et artiste numérique. Sa recherche porte sur les
-            communautés en ligne, notamment la manosphère, qu’elle analyse avec
-            un regard critique cyberféministe. Elle crée des objets numériques
-            (jeux vidéo, courts métrages) et développe aussi des formes dans
-            l’espace physique via l’édition et l’affiche.
-          </Row>
-        </div>
-      </Section>
+            <Row label="marion serclérat">
+              Professeure et artiste numérique. Sa recherche porte sur les
+              communautés en ligne, notamment la manosphère, qu’elle analyse
+              avec un regard critique cyberféministe. Elle crée des objets
+              numériques (jeux vidéo, courts métrages) et développe aussi des
+              formes dans l’espace physique via l’édition et l’affiche.
+            </Row>
+          </div>
+        </Section>
 
-      {/* TÉMOIGNER POUR LUTTER */}
-      <Section id="temoigner" title="témoigner pour lutter">
-        <div className="border-t border-black/10">
-          <Row label="performance">
-            Performance live audiovisuelle composée en duo — Marion à l’image,
-            Elyette au son. Une tentative de subvertir des espaces saturés par
-            la violence et les codes patriarcaux, en les envahissant avec des
-            codes et références féministes, et de créer des liens entre l’espace
-            public de la ville et celui du numérique (violences patriarcales,
-            coloniales, capitalistes).
-          </Row>
+        <Section id="temoigner" title="témoigner pour lutter">
+          <div className="divide-y divide-black/10">
+            <Row label="performance">
+              Performance live audiovisuelle composée en duo — Marion à l’image,
+              Elyette au son. Une tentative de subvertir des espaces saturés par
+              la violence et les codes patriarcaux, en les envahissant avec des
+              codes et références féministes, et de créer des liens entre
+              l’espace public de la ville et celui du numérique (violences
+              patriarcales, coloniales, capitalistes).
+            </Row>
 
-          <Row label="dispositif">
-            Le dispositif met en relation une bibliothèque de références :
-            extraits sonores (podcasts, musique, lectures performées) et
-            bibliothèque visuelle (image textuelle, photographie, extraits vidéo
-            / films), joués en simultané et en direct. La performance est aussi
-            pensée comme un processus de diffusion et un outil de dialogue.
-          </Row>
+            <Row label="dispositif">
+              Le dispositif met en relation une bibliothèque de références :
+              extraits sonores (podcasts, musique, lectures performées) et
+              bibliothèque visuelle (image textuelle, photographie, extraits
+              vidéo / films), joués en simultané et en direct. La performance
+              est aussi pensée comme un processus de diffusion et un outil de
+              dialogue.
+            </Row>
 
-          <Row label="navigation">
-            <span className="inline-flex gap-3">
-              <Link
-                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                href="/archives"
-              >
-                Archives
-              </Link>
-              <span className="text-black/40">·</span>
-              <Link
-                className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                href="/live"
-              >
-                Live
-              </Link>
-            </span>
-          </Row>
-        </div>
-      </Section>
+            <Row label="navigation">
+              <span className="inline-flex gap-3">
+                <Link
+                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                  href="/archives"
+                >
+                  Archives
+                </Link>
+                <span className="text-black/40">·</span>
+                <Link
+                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                  href="/live"
+                >
+                  Live
+                </Link>
+              </span>
+            </Row>
+          </div>
+        </Section>
 
-      {/* 2025 */}
-      <Section id="2025" title="2025">
-        <div className="border-t border-black/10">
-          <Row label="mars 2025">
-            Représentation à l’ESADSE lors du séminaire sur les actes politiques
-            autour du numérique (association Process)
-          </Row>
-          <Row label="avril / mai 2025">
-            Résidence de recherche et création (2 semaines), Aléatronome,
-            Saint-Étienne
-          </Row>
-          <Row label="juillet 2025">
-            Représentation au festival Picardiscount, Richecourt
-          </Row>
-          <Row label="juillet 2025">
-            Résidence de recherche et création (2 semaines), DROP, Saint-Étienne
-          </Row>
-          <Row label="octobre / novembre 2025">
-            Résidence de recherche et création Sonarea (2 semaines), AADN &amp;
-            GRAME CNCM, Villeurbanne
-          </Row>
-          <Row label="novembre 2025">
-            Représentation au festival Desmadre, Paris
-          </Row>
-        </div>
-      </Section>
+        <Section id="2025" title="2025">
+          <div className="divide-y divide-black/10">
+            <Row label="mars 2025">
+              Représentation à l’ESADSE lors du séminaire sur les actes
+              politiques autour du numérique (association Process)
+            </Row>
+            <Row label="avril / mai 2025">
+              Résidence de recherche et création (2 semaines), Aléatronome,
+              Saint-Étienne
+            </Row>
+            <Row label="juillet 2025">
+              Représentation au festival Picardiscount, Richecourt
+            </Row>
+            <Row label="juillet 2025">
+              Résidence de recherche et création (2 semaines), DROP,
+              Saint-Étienne
+            </Row>
+            <Row label="octobre / novembre 2025">
+              Résidence de recherche et création Sonarea (2 semaines), AADN
+              &amp; GRAME CNCM, Villeurbanne
+            </Row>
+            <Row label="novembre 2025">
+              Représentation au festival Desmadre, Paris
+            </Row>
+          </div>
+        </Section>
+      </div>
     </main>
   );
 }
