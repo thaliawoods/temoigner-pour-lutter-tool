@@ -163,5 +163,6 @@ Le projet évolue au fil des besoins artistiques et des itérations de performan
 ## Crédit
 
 Ely & Marion Collective
+
 Développement : Thalia Woods
 
