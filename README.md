@@ -80,7 +80,7 @@ L’export repose sur :
 
 ## Structure du projet
 
-txt
+```txt
 src/
  ├── app/
  │    ├── archives/
@@ -92,7 +92,7 @@ src/
  │    ├── references.ts
  │    ├── schema.ts
  │    └── (helpers: matching, media, etc.)
-
+```
 
 ---
 
@@ -135,11 +135,12 @@ tpl-web
 
 Structure attendue dans Supabase Storage :
 
+```text
 tpl-web/
  ├── image/
  ├── video/
  └── audio/
-
+```
 ---
 
 ## État du projet
