@@ -80,7 +80,7 @@ L’export repose sur :
 
 ## Structure du projet
 
-```txt
+txt
 src/
  ├── app/
  │    ├── archives/
@@ -105,7 +105,7 @@ Prérequis :
 
 Installation :
 
-```bash
+bash
 npm install
 
 Lancer le projet :
