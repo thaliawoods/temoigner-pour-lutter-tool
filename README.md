@@ -62,7 +62,7 @@ Certaines interactions (drag & drop) sont par nature plus complexes à rendre to
 
 Le projet est construit avec :
 - **Next.js 16 (App Router)**
-- **React**
+- **TypeScript**
 - **Tailwind CSS**
 
 Les médias sont hébergés sur **Supabase Storage**.  
