@@ -1,5 +1,3 @@
-// src/lib/schema.ts
-
 export type TPLType =
   | "collectif"
   | "film"

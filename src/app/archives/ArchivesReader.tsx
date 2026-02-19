@@ -66,7 +66,6 @@ function hasAnyMedia(r: TPLReference) {
 }
 
 export default function ArchivesReader() {
-  // ✅ base refs triées
   const allRefs = useMemo(() => {
     const all = getAllReferences();
     return [...all].sort((a, b) => {
@@ -85,10 +84,8 @@ export default function ArchivesReader() {
     });
   }, []);
 
-  // ✅ n'afficher QUE celles qui ont un media / mediaGallery
   const refs = useMemo(() => allRefs.filter(hasAnyMedia), [allRefs]);
 
-  // ✅ Search
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -113,14 +110,12 @@ export default function ArchivesReader() {
     });
   }, [refs, query]);
 
-  // ✅ sélection (on garde un id même si filtered bouge)
   const [selectedId, setSelectedId] = useState<string>(() => refs[0]?.id ?? "");
 
   const selected = useMemo(() => {
     return filtered.find((r) => r.id === selectedId) ?? filtered[0] ?? null;
   }, [filtered, selectedId]);
 
-  // ✅ Gallery viewer (on stocke la src choisie)
   const [gallerySrc, setGallerySrc] = useState<string | null>(null);
   const gallery = selected?.mediaGallery ?? null;
 
@@ -166,15 +161,11 @@ export default function ArchivesReader() {
       if (!nextId) return;
 
       setSelectedId(nextId);
-      setGallerySrc(null); // reset gallery quand on change de ref
+      setGallerySrc(null); 
     },
     [filtered, selected]
   );
 
-  // ✅ Keyboard:
-  // - ↑ ↓ liste
-  // - ← → gallery
-  // - ESC reset gallery
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const target = e.target;
@@ -185,7 +176,6 @@ export default function ArchivesReader() {
 
       if (isTyping) return;
 
-      // liste
       if (e.key === "ArrowUp") {
         e.preventDefault();
         selectByOffset(-1);
@@ -197,7 +187,6 @@ export default function ArchivesReader() {
         return;
       }
 
-      // gallery (si existe)
       if (gallery?.length) {
         if (e.key === "ArrowLeft") {
           e.preventDefault();
@@ -237,9 +226,7 @@ export default function ArchivesReader() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,520px)_1fr] gap-0 border border-zinc-200">
-          {/* LEFT */}
           <aside className="border-b lg:border-b-0 lg:border-r border-zinc-200">
-            {/* ✅ sticky search comme avant */}
             <div className="p-3 border-b border-zinc-200 bg-white sticky top-0 z-10">
               <input
                 value={query}
@@ -313,7 +300,6 @@ export default function ArchivesReader() {
             </div>
           </aside>
 
-          {/* MEDIA */}
           <section className="border-b lg:border-b-0 lg:border-r border-zinc-200 bg-white">
             <div className="h-[520px] w-full">
               {selected ? renderMedia(displayMedia, selected.title) : null}
@@ -377,7 +363,6 @@ export default function ArchivesReader() {
             ) : null}
           </section>
 
-          {/* META */}
           <section className="bg-white">
             {selected ? (
               <div className="p-6">
