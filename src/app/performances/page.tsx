@@ -7,7 +7,23 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const BUCKET = "tpl-web";
-const FOLDER = "performance"; 
+const FOLDER = "performance";
+
+// ✅ seules ces vidéos seront affichées (sans extension)
+const ALLOWED_PERFORMANCE_VIDEOS = new Set([
+  "Video 29-10-2025 12 54 13",
+  "Video 25-11-2025 18 26 24",
+  "Video 25-10-2023 16 51 39",
+  "Video 23-07-2025 16 33 39",
+  "Video 21-07-2025 17 25 01",
+  "Video 21-07-2025 17 23 15",
+  "Video 13-03-2025 21 03 23",
+  "Video 13-03-2025 20 51 39",
+  "Video 03-05-2025 20 46 55",
+  "Video 03-05-2025 20 34 53",
+  "Video 03-05-2025 20 24 07",
+  "Video 03-05-2025 20 18 03",
+]);
 
 type Performance = {
   id: string;
@@ -41,6 +57,11 @@ function isVideoName(name: string): boolean {
   return /\.(mp4|webm|mov|m4v)$/i.test(name);
 }
 
+// enlève l’extension (pour whitelist + title)
+function stripExtension(name: string): string {
+  return name.replace(/\.[a-z0-9]+$/i, "");
+}
+
 function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -56,12 +77,13 @@ function parseYearFromFilename(filename: string): number | undefined {
   return Number.isFinite(year) ? year : undefined;
 }
 
+// ✅ séparateur " - " + ignore location placeholder
 function metaLine(p: Performance) {
   const parts: string[] = [];
   if (p.year) parts.push(String(p.year));
-  if (p.location) parts.push(p.location);
+  if (p.location && p.location !== "—") parts.push(p.location);
   if (p.credits) parts.push(p.credits);
-  return parts.length ? parts.join(" · ") : "—";
+  return parts.length ? parts.join(" - ") : "—";
 }
 
 export default function PerformancesPage() {
@@ -90,21 +112,25 @@ export default function PerformancesPage() {
 
         if (cancelled) return;
 
+        // ✅ vidéos + whitelist
         const files =
-          res.data?.filter((f) => !!f.name && isVideoName(f.name)) ?? [];
+          res.data
+            ?.filter((f) => !!f.name && isVideoName(f.name))
+            .filter((f) => ALLOWED_PERFORMANCE_VIDEOS.has(stripExtension(f.name))) ??
+          [];
 
         const items: Performance[] = files.map((f) => {
           const path = `${FOLDER}/${f.name}`;
           const url = buildPublicUrl(supabase, path);
 
           const year = parseYearFromFilename(f.name);
-          const title = f.name.replace(/\.[a-z0-9]+$/i, "");
+          const title = stripExtension(f.name);
 
           return {
             id: slugify(f.name),
             title,
             year,
-            location: "—",
+            location: undefined, // ✅ plus de "—" qui pollue la meta line
             credits: "Ely & Marion Collective",
             videoSrc: url,
             path,
@@ -134,11 +160,10 @@ export default function PerformancesPage() {
         <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
           performances
         </div>
+        <h1 className="mt-2 text-3xl font-medium">extraits</h1>
 
         <div className="mt-4 mono text-[12px] opacity-60">
-          {loading
-            ? "loading…"
-            : `videos: ${performances.length}`}
+          {loading ? "loading…" : `videos: ${performances.length}`}
         </div>
 
         <div className="mt-10 space-y-12">
@@ -148,7 +173,10 @@ export default function PerformancesPage() {
                 no media found
               </div>
               <div className="mt-2 text-sm text-zinc-700">
-                Rien trouvé dans <span className="mono">{BUCKET}/{FOLDER}/</span>
+                Rien trouvé dans{" "}
+                <span className="mono">
+                  {BUCKET}/{FOLDER}/
+                </span>
               </div>
             </div>
           )}
@@ -182,26 +210,6 @@ export default function PerformancesPage() {
                   <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
                     {metaLine(p)}
                   </div>
-                </div>
-
-                <div className="mt-3 text-sm text-zinc-600">
-                  <span className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                    id
-                  </span>{" "}
-                  — {p.id}
-                </div>
-
-                <div className="mt-2 text-sm text-zinc-600">
-                  <span className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                    path
-                  </span>{" "}
-                  — {p.path}
-                </div>
-
-                <div className="mt-4 text-sm text-zinc-700">
-                  <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    note
-                  </span>{" "}
                 </div>
               </div>
             </article>
