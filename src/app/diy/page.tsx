@@ -1,37 +1,13 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { getAllReferences } from "@/lib/references";
 import type { TPLMedia, TPLReference } from "@/lib/schema";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const BUCKET = "tpl-web";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __tpl_supabase__: SupabaseClient | undefined;
-}
-
-function getSupabase(): SupabaseClient | null {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-  if (!globalThis.__tpl_supabase__) {
-    globalThis.__tpl_supabase__ = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return globalThis.__tpl_supabase__ ?? null;
-}
-
 type PoolKind = "image" | "video" | "text";
-type BucketKind = "image" | "video" | "audio";
-
-type BucketFile = {
-  kind: BucketKind;
-  path: string;
-  name: string;
-  key: string;
-};
 
 type PoolTile = {
   id: string;
@@ -89,91 +65,14 @@ function trunc(s: string, n = 34) {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
-function normalize(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\.[a-z0-9]+$/i, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function makeKey(nameOrPath: string) {
-  return normalize(nameOrPath);
-}
-
-function preferredKindForType(t: TPLReference["type"]): BucketKind {
-  if (t === "musique" || t === "podcast") return "audio";
-  if (t === "film" || t === "video" || t === "performance" || t === "jeu_video")
-    return "video";
-  return "image";
-}
-
-function scoreMatch(fileKey: string, refKey: string) {
-  if (!fileKey || !refKey) return 0;
-  if (fileKey === refKey) return 100;
-  if (fileKey.includes(refKey)) return 40;
-  if (refKey.includes(fileKey)) return 20;
-
-  const fileTokens = new Set(fileKey.split(" ").filter(Boolean));
-  const refTokens = refKey.split(" ").filter(Boolean);
-
-  let hit = 0;
-  for (const t of refTokens) {
-    if (fileTokens.has(t)) hit += 3;
-    else if (t.length >= 4) {
-      for (const ft of fileTokens) {
-        if (ft.includes(t) || t.includes(ft)) {
-          hit += 1;
-          break;
-        }
-      }
-    }
-  }
-  return hit;
-}
-
-function guessMediaForReference(
-  r: TPLReference,
-  pool: Record<BucketKind, BucketFile[]>
-): TPLMedia | undefined {
-  const kind = preferredKindForType(r.type);
-  const files = pool[kind];
-  if (!files.length) return undefined;
-
-  const candidates = [
-    r.id,
-    r.title,
-    `${r.title} ${r.creator ?? ""}`,
-    `${r.creator ?? ""} ${r.title}`,
-  ]
-    .map((x) => makeKey(x))
-    .filter(Boolean);
-
-  let best: { file: BucketFile; score: number } | null = null;
-
-  for (const f of files) {
-    let s = 0;
-    for (const c of candidates) s = Math.max(s, scoreMatch(f.key, c));
-    if (!best || s > best.score) best = { file: f, score: s };
-  }
-
-  const chosen = best?.score ? best.file : files[0];
-
-  if (kind === "image") return { kind: "image", src: chosen.path, alt: r.title };
-  if (kind === "video") return { kind: "video", src: chosen.path };
-  return { kind: "audio", src: chosen.path, title: r.title };
-}
-
-function kindFromMedia(m?: TPLMedia): PoolKind {
+function kindFromMedia(m?: TPLMedia | null): PoolKind {
   if (!m) return "text";
   if (m.kind === "image") return "image";
   if (m.kind === "video") return "video";
   return "text";
 }
 
-function canvasKindFromMedia(m?: TPLMedia): CanvasItem["kind"] {
+function canvasKindFromMedia(m?: TPLMedia | null): CanvasItem["kind"] {
   if (!m) return "text";
   if (m.kind === "image") return "image";
   if (m.kind === "video") return "video";
@@ -181,9 +80,9 @@ function canvasKindFromMedia(m?: TPLMedia): CanvasItem["kind"] {
   return "text";
 }
 
-function mediaUrlFromMedia(m?: TPLMedia): string | null {
+function mediaUrlFromMedia(m?: TPLMedia | null): string | null {
   if (!m) return null;
-  const src = (m as { src?: string }).src ?? "";
+  const src = m.src ?? "";
   if (!src) return null;
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
   return buildPublicUrl(src);
@@ -404,7 +303,7 @@ function CanvasBlock({
                 {trunc(r.title, 48)}
               </div>
             </div>
-            <WaveMini seed={makeKey(r.id).length * 33} />
+            <WaveMini seed={r.id.length * 33} />
           </div>
 
           {url ? (
@@ -467,75 +366,14 @@ function CanvasBlock({
 }
 
 export default function DIYPage() {
-  const supabase = useMemo(() => getSupabase(), []);
   const baseRefs = useMemo(() => getAllReferences(), []);
 
-  const [refs, setRefs] = useState<TPLReference[]>(baseRefs);
-  const [loadingMedia, setLoadingMedia] = useState<boolean>(true);
+  // ✅ uniquement refs qui ont un media (main)
+  const refs = useMemo(() => {
+    return baseRefs.filter((r) => Boolean(r.media));
+  }, [baseRefs]);
 
-  React.useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setLoadingMedia(true);
-
-      if (!supabase) {
-        setLoadingMedia(false);
-        return;
-      }
-
-      try {
-        const kinds: BucketKind[] = ["image", "video", "audio"];
-
-        const results = await Promise.all(
-          kinds.map(async (kind) => {
-            const res = await supabase.storage.from(BUCKET).list(kind, {
-              limit: 1000,
-              offset: 0,
-              sortBy: { column: "name", order: "asc" },
-            });
-
-            const files: BucketFile[] =
-              res.data?.map((f) => {
-                const path = `${kind}/${f.name}`;
-                return {
-                  kind,
-                  path,
-                  name: f.name,
-                  key: makeKey(f.name),
-                };
-              }) ?? [];
-
-            return [kind, files] as const;
-          })
-        );
-
-        if (cancelled) return;
-
-        const pool: Record<BucketKind, BucketFile[]> = {
-          image: [],
-          video: [],
-          audio: [],
-        };
-
-        for (const [kind, files] of results) pool[kind] = files;
-
-        const enriched = baseRefs.map((r) => {
-          const media = guessMediaForReference(r, pool);
-          return { ...r, media };
-        });
-
-        setRefs(enriched);
-      } finally {
-        if (!cancelled) setLoadingMedia(false);
-      }
-    }
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase, baseRefs]);
+  const loadingMedia = false;
 
   const refsById = useMemo(() => {
     const m = new Map<string, TPLReference>();
@@ -959,267 +797,267 @@ export default function DIYPage() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
-return (
-  <main className="bg-white text-zinc-900">
-    <div className="mx-auto max-w-6xl px-6 pt-6 pb-14">
-      <div className="pt-4">
-        <div className="grid grid-cols-12 gap-6 items-end">
-          <div className="col-span-12 lg:col-span-8">
-            <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-              do it yourself
+  return (
+    <main className="bg-white text-zinc-900">
+      <div className="mx-auto max-w-6xl px-6 pt-6 pb-14">
+        <div className="pt-4">
+          <div className="grid grid-cols-12 gap-6 items-end">
+            <div className="col-span-12 lg:col-span-8">
+              <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
+                do it yourself
+              </div>
+
+              <h1 className="mt-3 text-[30px] leading-[1.15] font-semibold tracking-tight">
+                drag → compose → export
+              </h1>
+
+              <div className="mt-2 mono text-[11px] uppercase tracking-widest text-zinc-400">
+                {loadingMedia
+                  ? "loading media…"
+                  : `${visualRefs.length} visuals · ${audioRefs.length} audio`}
+              </div>
             </div>
 
-            <h1 className="mt-3 text-[30px] leading-[1.15] font-semibold tracking-tight">
-              drag → compose → export
-            </h1>
+            <div className="col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
+              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+                <button
+                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  onClick={refresh}
+                  type="button"
+                >
+                  refresh
+                </button>
 
-            <div className="mt-2 mono text-[11px] uppercase tracking-widest text-zinc-400">
-              {loadingMedia
-                ? "loading media…"
-                : `${visualRefs.length} visuals · ${audioRefs.length} audio`}
+                <button
+                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  onClick={downloadPDF}
+                  type="button"
+                >
+                  download pdf
+                </button>
+
+                <button
+                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  onClick={removeSelected}
+                  type="button"
+                >
+                  remove
+                </button>
+
+                <button
+                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  onClick={clear}
+                  type="button"
+                >
+                  clear
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
-            <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
-              <button
-                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
-                onClick={refresh}
-                type="button"
-              >
-                refresh
-              </button>
+          <div className="mt-6 border-t border-zinc-200" />
 
-              <button
-                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
-                onClick={downloadPDF}
-                type="button"
-              >
-                download pdf
-              </button>
-
-              <button
-                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
-                onClick={removeSelected}
-                type="button"
-              >
-                remove
-              </button>
-
-              <button
-                className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
-                onClick={clear}
-                type="button"
-              >
-                clear
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 border-t border-zinc-200" />
-
-        <div className="mt-4">
-          <div
-            ref={stageRef}
-            className="relative w-full"
-            style={{
-              height: rects.totalH + 16,
-              overscrollBehaviorX: "none",
-              touchAction: "none",
-            }}
-            onPointerMove={moveDrag}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
-          >
-            {tileData.map(({ tile, ref }) => {
-              const style: React.CSSProperties = {
-                left: tile.x,
-                top: tile.y,
-                width: tile.w,
-                height: tile.h,
-              };
-
-              return (
-                <PoolCard
-                  key={tile.id}
-                  r={ref}
-                  style={style}
-                  onPointerDown={(e) => beginDragVisual(e, tile)}
-                />
-              );
-            })}
-
+          <div className="mt-4">
             <div
-              ref={captureRef}
-              className="absolute"
+              ref={stageRef}
+              className="relative w-full"
               style={{
-                left: rects.canvas.x,
-                top: rects.canvas.y,
-                width: rects.canvas.w,
-                height: rects.canvas.h + 18 + rects.console.h,
-                background: "#fff",
+                height: rects.totalH + 16,
+                overscrollBehaviorX: "none",
+                touchAction: "none",
               }}
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
             >
+              {tileData.map(({ tile, ref }) => {
+                const style: React.CSSProperties = {
+                  left: tile.x,
+                  top: tile.y,
+                  width: tile.w,
+                  height: tile.h,
+                };
+
+                return (
+                  <PoolCard
+                    key={tile.id}
+                    r={ref}
+                    style={style}
+                    onPointerDown={(e) => beginDragVisual(e, tile)}
+                  />
+                );
+              })}
+
               <div
-                className="absolute border border-zinc-200 bg-white"
+                ref={captureRef}
+                className="absolute"
                 style={{
-                  left: 0,
-                  top: 0,
+                  left: rects.canvas.x,
+                  top: rects.canvas.y,
                   width: rects.canvas.w,
-                  height: rects.canvas.h,
+                  height: rects.canvas.h + 18 + rects.console.h,
+                  background: "#fff",
                 }}
-                onPointerDown={() => setSelectedId(null)}
               >
                 <div
-                  className="absolute inset-0"
+                  className="absolute border border-zinc-200 bg-white"
                   style={{
-                    backgroundImage:
-                      "linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)",
-                    backgroundSize: "48px 48px",
+                    left: 0,
+                    top: 0,
+                    width: rects.canvas.w,
+                    height: rects.canvas.h,
                   }}
-                />
+                  onPointerDown={() => setSelectedId(null)}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)",
+                      backgroundSize: "48px 48px",
+                    }}
+                  />
 
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                    drag refs here
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
+                      drag refs here
+                    </div>
                   </div>
+
+                  {items.map((it) => {
+                    const r = refsById.get(it.refId);
+                    if (!r) return null;
+
+                    return (
+                      <div
+                        key={it.id}
+                        className={[
+                          "absolute bg-white border border-zinc-200 select-none overflow-hidden",
+                          selectedId === it.id ? "outline outline-1 outline-black" : "",
+                        ].join(" ")}
+                        style={{
+                          left: it.x,
+                          top: it.y,
+                          width: it.w,
+                          height: it.h,
+                        }}
+                        onPointerDown={(e) => onBlockDown(e, it)}
+                        onPointerMove={onBlockMove}
+                        onPointerUp={onBlockUp}
+                        onPointerCancel={onBlockUp}
+                      >
+                        <CanvasBlock
+                          r={r}
+                          selected={selectedId === it.id}
+                          style={{ left: 0, top: 0, width: it.w, height: it.h }}
+                          onPointerDown={() => {}}
+                          onPointerMove={() => {}}
+                          onPointerUp={() => {}}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {items.map((it) => {
-                  const r = refsById.get(it.refId);
-                  if (!r) return null;
-
-                  return (
-                    <div
-                      key={it.id}
-                      className={[
-                        "absolute bg-white border border-zinc-200 select-none overflow-hidden",
-                        selectedId === it.id ? "outline outline-1 outline-black" : "",
-                      ].join(" ")}
-                      style={{
-                        left: it.x,
-                        top: it.y,
-                        width: it.w,
-                        height: it.h,
-                      }}
-                      onPointerDown={(e) => onBlockDown(e, it)}
-                      onPointerMove={onBlockMove}
-                      onPointerUp={onBlockUp}
-                      onPointerCancel={onBlockUp}
-                    >
-                      <CanvasBlock
-                        r={r}
-                        selected={selectedId === it.id}
-                        style={{ left: 0, top: 0, width: it.w, height: it.h }}
-                        onPointerDown={() => {}}
-                        onPointerMove={() => {}}
-                        onPointerUp={() => {}}
-                      />
+                <div
+                  className="absolute border border-zinc-200 bg-white"
+                  style={{
+                    left: 0,
+                    top: rects.canvas.h + 18,
+                    width: rects.console.w,
+                    height: rects.console.h,
+                  }}
+                >
+                  <div className="p-3 h-full flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+                        audio console
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <WaveMini seed={42} />
+                        <WaveMini seed={99} />
+                        <WaveMini seed={123} />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
 
-              <div
-                className="absolute border border-zinc-200 bg-white"
-                style={{
-                  left: 0,
-                  top: rects.canvas.h + 18,
-                  width: rects.console.w,
-                  height: rects.console.h,
-                }}
-              >
-                <div className="p-3 h-full flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                      audio console
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <WaveMini seed={42} />
-                      <WaveMini seed={99} />
-                      <WaveMini seed={123} />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-auto border border-zinc-200">
-                    <div className="divide-y divide-zinc-200">
-                      {audioList.map((r) => {
-                        const src = mediaUrlFromMedia(r.media);
-                        return (
-                          <div
-                            key={r.id}
-                            className="flex items-center justify-between gap-4 px-3 py-2 hover:bg-zinc-50"
-                          >
-                            <button
-                              type="button"
-                              className="min-w-0 text-left"
-                              onPointerDown={(e) => beginDragAudio(e, r.id)}
+                    <div className="flex-1 overflow-auto border border-zinc-200">
+                      <div className="divide-y divide-zinc-200">
+                        {audioList.map((r) => {
+                          const src = mediaUrlFromMedia(r.media);
+                          return (
+                            <div
+                              key={r.id}
+                              className="flex items-center justify-between gap-4 px-3 py-2 hover:bg-zinc-50"
                             >
-                              <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
-                                {prettyType(r.type)}
-                              </div>
-                              <div className="mt-1 text-[12px] text-zinc-900 truncate">
-                                {r.title}
-                              </div>
-                              <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
-                                drag to canvas
-                              </div>
-                            </button>
-
-                            <div className="flex items-center gap-3">
-                              <WaveMini seed={makeKey(r.id).length * 17} />
-                              {src ? (
-                                <audio
-                                  controls
-                                  preload="none"
-                                  src={src}
-                                  className="w-[260px]"
-                                />
-                              ) : (
-                                <div className="mono text-[10px] uppercase tracking-widest text-zinc-400">
-                                  no audio
+                              <button
+                                type="button"
+                                className="min-w-0 text-left"
+                                onPointerDown={(e) => beginDragAudio(e, r.id)}
+                              >
+                                <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
+                                  {prettyType(r.type)}
                                 </div>
-                              )}
+                                <div className="mt-1 text-[12px] text-zinc-900 truncate">
+                                  {r.title}
+                                </div>
+                                <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
+                                  drag to canvas
+                                </div>
+                              </button>
+
+                              <div className="flex items-center gap-3">
+                                <WaveMini seed={r.id.length * 17} />
+                                {src ? (
+                                  <audio
+                                    controls
+                                    preload="none"
+                                    src={src}
+                                    className="w-[260px]"
+                                  />
+                                ) : (
+                                  <div className="mono text-[10px] uppercase tracking-widest text-zinc-400">
+                                    no audio
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {ghost ? (
+                <div
+                  className="absolute pointer-events-none bg-white border border-zinc-200 opacity-85 overflow-hidden"
+                  style={{
+                    left: ghost.x,
+                    top: ghost.y,
+                    width: ghost.w,
+                    height: ghost.h,
+                  }}
+                >
+                  <div className="p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
+                        {ghost.kind.toUpperCase()}
+                      </div>
+                      <div className="mt-2 text-[13px] leading-snug text-zinc-900">
+                        {trunc(refsById.get(ghost.refId)?.title ?? "—", 48)}
+                      </div>
+                    </div>
+                    {ghost.kind === "audio" ? <WaveMini seed={77} /> : null}
+                  </div>
+                </div>
+              ) : null}
             </div>
-
-            {ghost ? (
-              <div
-                className="absolute pointer-events-none bg-white border border-zinc-200 opacity-85 overflow-hidden"
-                style={{
-                  left: ghost.x,
-                  top: ghost.y,
-                  width: ghost.w,
-                  height: ghost.h,
-                }}
-              >
-                <div className="p-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-                      {ghost.kind.toUpperCase()}
-                    </div>
-                    <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-                      {trunc(refsById.get(ghost.refId)?.title ?? "—", 48)}
-                    </div>
-                  </div>
-                  {ghost.kind === "audio" ? <WaveMini seed={77} /> : null}
-                </div>
-              </div>
-            ) : null}
           </div>
-        </div>
 
-        <div className="h-24" />
+          <div className="h-24" />
+        </div>
       </div>
-    </div>
-  </main>
-);
+    </main>
+  );
 }

@@ -1,3 +1,5 @@
+// src/lib/schema.ts
+
 export type TPLType =
   | "collectif"
   | "film"
@@ -28,7 +30,8 @@ export type TPLReference = {
   sourceUrl: string | null;
   notes: string;
   tags: string[];
-  media?: TPLMedia;
+  media?: TPLMedia | null;
+  mediaGallery?: TPLMedia[];
 };
 
 export type TPLCredits = {

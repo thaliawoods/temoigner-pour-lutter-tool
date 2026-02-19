@@ -40,19 +40,38 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "collectif-club-mad-mini-guide-du-langage-inclusif-2019",
-      "type": "collectif",
-      "title": "Mini guide du langage inclusif",
-      "creator": "Club Mad",
-      "year": 2019,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "collectif-club-mad-mini-guide-du-langage-inclusif-2019",
+  "type": "collectif",
+  "title": "Mini guide du langage inclusif",
+  "creator": "Club Mad",
+  "year": 2019,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/clubmed pdf .png"
+  },
+  "mediaGallery": [
+    { "kind": "image", "src": "image/clubmed 2.png" },
+    { "kind": "image", "src": "image/clubmed pdf 1.png" },
+    { "kind": "image", "src": "image/clubmed pdf 3.png" },
+    { "kind": "image", "src": "image/clubmed pdf 4.png" },
+    { "kind": "image", "src": "image/clubmed pdf 5.png" },
+    { "kind": "image", "src": "image/clubmed pdf 6.png" },
+    { "kind": "image", "src": "image/clubmed pdf 7.png" },
+    { "kind": "image", "src": "image/clubmed pdf 8.png" },
+    { "kind": "image", "src": "image/clubmed pdf 9.png" },
+    { "kind": "image", "src": "image/clubmed pdf 10.png" },
+    { "kind": "image", "src": "image/clubmed pdf 11.png" },
+    { "kind": "image", "src": "image/clubmed pdf 13.png" },
+    { "kind": "image", "src": "image/clubmed pdf 14.png" }
+  ]
+},
     {
       "id": "collectif-colleureuses-colleureuses-lyon-marseille-valence-saint-etienne",
       "type": "collectif",
@@ -79,32 +98,49 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "collectif-lastesis",
-      "type": "collectif",
-      "title": "LASTESIS",
-      "creator": null,
-      "year": null,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
-    {
-      "id": "collectif-roxane-maillet-atelier-autour-des-cultures-visuelles-lesbiennes-2020",
-      "type": "collectif",
-      "title": "Atelier autour des cultures visuelles lesbiennes",
-      "creator": "Roxane Maillet",
-      "year": 2020,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "collectif-lastesis",
+  "type": "collectif",
+  "title": "LASTESIS",
+  "creator": null,
+  "year": null,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/LasTesis_1.jpeg",
+    "alt": "LASTESIS"
+  },
+  "mediaGallery": [
+    { "kind": "image", "src": "image/LasTesis_1.jpeg" },
+    { "kind": "image", "src": "image/lastesis_2.jpeg" },
+    { "kind": "image", "src": "image/LasTesis_3.jpeg" },
+    { "kind": "image", "src": "image/LasTesis_4.jpeg" },
+    { "kind": "image", "src": "image/LasTesis_5.jpeg" }
+  ]
+},
+{
+  "id": "collectif-roxane-maillet-atelier-autour-des-cultures-visuelles-lesbiennes-2020",
+  "type": "collectif",
+  "title": "Atelier autour des cultures visuelles lesbiennes",
+  "creator": "Roxane Maillet",
+  "year": 2020,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/FDL-ED-2024-RoxanneMaillet-01-web.png",
+    "alt": "Atelier autour des cultures visuelles lesbiennes — Roxane Maillet (2020)"
+  }
+},
     {
       "id": "collectif-tqfm-montrealfeministes-2023",
       "type": "collectif",
@@ -354,19 +390,24 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "jeu-celine-tricart-fight-back-2023",
-      "type": "jeu_video",
-      "title": "FIGHT BACK",
-      "creator": "Céline Tricart",
-      "year": 2023,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "jeu-celine-tricart-fight-back-2023",
+  "type": "jeu_video",
+  "title": "FIGHT BACK",
+  "creator": "Céline Tricart",
+  "year": 2023,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/FIGHT BACK.png",
+    "alt": "FIGHT BACK — Céline Tricart (2023)"
+  }
+},
     {
       "id": "jeu-danielle-brathwaite-shirley-resurrection-pro-league-2020",
       "type": "jeu_video",
@@ -380,19 +421,24 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "jeu-dyke-studio-dyke-street-2018",
-      "type": "jeu_video",
-      "title": "Dyke Street",
-      "creator": "Dyke Studio",
-      "year": 2018,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "jeu-dyke-studio-dyke-street-2018",
+  "type": "jeu_video",
+  "title": "Dyke Street",
+  "creator": "Dyke Studio",
+  "year": 2018,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/dykie street jpg.png",
+    "alt": "Dyke Street — Dyke Studio (2018)"
+  }
+},
     {
       "id": "jeu-guerrilla-game-horizon-zero-dawn-2017",
       "type": "jeu_video",
@@ -419,19 +465,31 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "jeu-keiken-wisdom-for-love-3-0-2022",
-      "type": "jeu_video",
-      "title": "Wisdom for Love 3.0",
-      "creator": "Keiken",
-      "year": 2022,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "jeu-keiken-wisdom-for-love-3-0-2022",
+  "type": "jeu_video",
+  "title": "Wisdom for Love 3.0",
+  "creator": "Keiken",
+  "year": 2022,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": { "kind": "image", "src": "image/12_Keiken wisdoms for love.png" },
+  "mediaGallery": [
+    { "kind": "image", "src": "image/1Keikenwisdomsforlove.png" },
+    { "kind": "image", "src": "image/2_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/3_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/4_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/5_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/6_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/7_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/8_Keiken wisdoms for love.png" },
+    { "kind": "image", "src": "image/9_Keiken wisdoms for love.png" }
+  ]
+},
     {
       "id": "jeu-marion-serclerat-hercyberevolution-2024",
       "type": "jeu_video",
@@ -550,19 +608,24 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "texte-irene-la-terreur-feministe-2015",
-      "type": "texte",
-      "title": "La terreur féministe",
-      "creator": "Irene",
-      "year": 2015,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": "Livre",
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "texte-irene-la-terreur-feministe-2015",
+  "type": "texte",
+  "title": "La terreur féministe",
+  "creator": "Irene",
+  "year": 2015,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": "Livre",
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/la terreur femine .png",
+    "alt": "La terreur féministe — Irene (2015)"
+  }
+},
     {
       "id": "texte-eloge-du-feminisme-extremiste-2021",
       "type": "texte",
@@ -602,19 +665,23 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "texte-lucile-olympe-haute-manifeste-cybersorciere-2016",
-      "type": "texte",
-      "title": "Manifeste Cybersorcière",
-      "creator": "Lucile Olympe Haute",
-      "year": 2016,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": "Manifeste",
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "texte-lucile-olympe-haute-manifeste-cybersorciere-2016",
+  "type": "texte",
+  "title": "Manifeste Cybersorcière",
+  "creator": "Lucile Olympe Haute",
+  "year": 2016,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": "Manifeste",
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/Capture decran 2025-04-24 a 10.49.31.png"
+  }
+},
     {
       "id": "texte-marta-luceno-moreno-manifeste-gynepunk-2017",
       "type": "texte",
@@ -1086,31 +1153,41 @@
       "tags": []
     },
     {
-      "id": "oeuvre_picturale-transhackfeministe-convergence-transhackfeministe-convergence-2014",
-      "type": "oeuvre_picturale",
-      "title": "Transhackfeministe Convergence",
-      "creator": "Transhackfeministe Convergence",
-      "year": 2014,
-      "yearRange": null,
-      "location": "Calafou",
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
-    {
-      "id": "oeuvre_picturale-transhackfeministe-convergence-transhackfeministe-convergence-2022",
-      "type": "oeuvre_picturale",
-      "title": "Transhackfeministe Convergence",
-      "creator": "Transhackfeministe Convergence",
-      "year": 2022,
-      "yearRange": null,
-      "location": "Calafou",
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+  "id": "oeuvre_picturale-transhackfeministe-convergence-transhackfeministe-convergence-2014",
+  "type": "oeuvre_picturale",
+  "title": "Transhackfeministe Convergence",
+  "creator": "Transhackfeministe Convergence",
+  "year": 2014,
+  "yearRange": null,
+  "location": "Calafou",
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/affiche_transhackfeministconvergence_calafou_2014.png",
+    "alt": "Affiche Transhackfeministe Convergence — Calafou (2014)"
+  }
+},
+{
+  "id": "oeuvre_picturale-transhackfeministe-convergence-transhackfeministe-convergence-2022",
+  "type": "oeuvre_picturale",
+  "title": "Transhackfeministe Convergence",
+  "creator": "Transhackfeministe Convergence",
+  "year": 2022,
+  "yearRange": null,
+  "location": "Calafou",
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/affiche_transhackfeministconveregence_calafou_2022.png",
+    "alt": "Affiche Transhackfeministe Convergence — Calafou (2022)"
+  }
+},
 
     {
       "id": "performance-joelle-sambi-caillasses-not-all-men-2021",

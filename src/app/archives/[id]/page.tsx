@@ -1,3 +1,5 @@
+// src/app/archives/[id]/page.tsx
+
 import { notFound } from "next/navigation";
 import { getReferenceById } from "@/lib/references";
 import type { TPLMedia, TPLReference } from "@/lib/schema";
@@ -32,7 +34,7 @@ function safePublicUrl(src: string): string {
   }
 }
 
-function MediaBlock({ media, title }: { media?: TPLMedia; title: string }) {
+function MediaBlock({ media, title }: { media?: TPLMedia | null; title: string }) {
   if (!media) {
     return (
       <div className="w-full aspect-[16/9] bg-zinc-100 flex items-center justify-center">
@@ -99,6 +101,25 @@ export default async function ArchiveReferencePage({
           <div className="border-b border-zinc-300 bg-white">
             <MediaBlock media={r.media} title={r.title} />
           </div>
+
+          {r.mediaGallery?.length ? (
+            <div className="border-b border-zinc-300 bg-white p-4">
+              <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
+                gallery
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {r.mediaGallery.map((m, i) => (
+                  <img
+                    key={i}
+                    src={safePublicUrl(m.src)}
+                    alt={`${r.title} — ${i + 1}`}
+                    className="w-full aspect-[4/3] object-cover bg-zinc-100"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 md:grid-cols-3">
             <MetaCell label="year" value={formatYear(r)} />

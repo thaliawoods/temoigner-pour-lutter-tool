@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-const BUCKET = "tpl-web";
+import { getAllReferences } from "@/lib/references";
+import type { TPLReference, TPLMedia } from "@/lib/schema";
+import { buildPublicUrl } from "@/lib/public-url";
 
 type MediaItem = {
-  type: "image" | "video";
-  path: string; 
+  type: "image";
+  path: string;
 };
 
 type Tile = {
@@ -24,29 +22,8 @@ type Tile = {
 
 type View = { x: number; y: number; scale: number };
 
-function isVideoPath(path: string): boolean {
-  return /\.(mp4|webm|mov|m4v)$/i.test(path);
-}
-
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
-}
-
-declare global {
-  var __tpl_supabase__: SupabaseClient | undefined;
-}
-
-function getSupabase(): SupabaseClient | null {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-  if (!globalThis.__tpl_supabase__) {
-    globalThis.__tpl_supabase__ = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return globalThis.__tpl_supabase__ ?? null;
-}
-
-function buildPublicUrl(supabase: SupabaseClient, path: string): string {
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
 }
 
 function seeded01(seed: number): number {
@@ -54,9 +31,26 @@ function seeded01(seed: number): number {
   return x - Math.floor(x);
 }
 
+function pushIfImage(out: MediaItem[], m: TPLMedia | undefined | null) {
+  if (!m) return;
+  if (m.kind === "image") out.push({ type: "image", path: m.src });
+}
+
+function pickImageMediasFromRefs(refs: TPLReference[]): MediaItem[] {
+  const out: MediaItem[] = [];
+
+  for (const r of refs) {
+    pushIfImage(out, r.media);
+    for (const m of r.mediaGallery ?? []) pushIfImage(out, m);
+  }
+
+  const uniq = new Map<string, MediaItem>();
+  for (const m of out) uniq.set(m.path, m);
+  return [...uniq.values()];
+}
+
 function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Tile[] {
   const count = media.length;
-
   const spread = clamp(250 + count * 10, 350, 2200);
 
   const baseW = viewportW > 900 ? 220 : 160;
@@ -67,15 +61,14 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
     const r2 = seeded01(i + 2);
     const r3 = seeded01(i + 3);
 
-    const sizeBoost = m.type === "video" ? 1.1 : 1.0;
-    const w = Math.round((baseW + r3 * 160) * sizeBoost);
-    const h = Math.round((baseH + r1 * 140) * sizeBoost);
+    const w = Math.round(baseW + r3 * 160);
+    const h = Math.round(baseH + r1 * 140);
 
     const x = Math.round(viewportW * 0.35 + (r1 - 0.5) * spread);
     const y = Math.round(viewportH * 0.55 + (r2 - 0.5) * spread);
 
     return {
-      id: `${m.type}-${i}-${m.path}`,
+      id: `image-${i}-${m.path}`,
       media: m,
       x,
       y,
@@ -87,11 +80,16 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
 }
 
 export default function HomePage() {
-  const supabase = useMemo(() => getSupabase(), []);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [media, setMedia] = useState<MediaItem[]>([]);
+  const media = useMemo(() => {
+    const refs = getAllReferences();
+    const withMedia = refs.filter(
+      (r) => Boolean(r.media) || Boolean(r.mediaGallery?.length)
+    );
+    return pickImageMediasFromRefs(withMedia);
+  }, []);
+
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
@@ -111,61 +109,6 @@ export default function HomePage() {
   } | null>(null);
 
   const mediaCount = media.length;
-  const imageCount = media.filter((m) => m.type === "image").length;
-  const videoCount = media.filter((m) => m.type === "video").length;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setLoading(true);
-
-      if (!supabase) {
-        console.warn("[SUPABASE] missing env vars");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const [imgs, vids] = await Promise.all([
-          supabase.storage.from(BUCKET).list("image", {
-            limit: 1000,
-            offset: 0,
-            sortBy: { column: "name", order: "asc" },
-          }),
-          supabase.storage.from(BUCKET).list("video", {
-            limit: 1000,
-            offset: 0,
-            sortBy: { column: "name", order: "asc" },
-          }),
-        ]);
-
-        if (cancelled) return;
-
-        const images: MediaItem[] =
-          imgs.data?.map((f) => ({ type: "image", path: `image/${f.name}` })) ?? [];
-        const videos: MediaItem[] =
-          vids.data?.map((f) => ({ type: "video", path: `video/${f.name}` })) ?? [];
-
-        const all = [...images, ...videos];
-
-        console.log("[SUPABASE] images", images.length, "videos", videos.length);
-        console.log("[SUPABASE] example image", images[0]);
-        console.log("[SUPABASE] example video", videos[0]);
-
-        setMedia(all);
-      } catch (e) {
-        console.error("[SUPABASE] list error", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -227,7 +170,9 @@ export default function HomePage() {
       const dy = (e.clientY - d.startY) / view.scale;
 
       setTiles((prev) =>
-        prev.map((t) => (t.id === d.id ? { ...t, x: d.tileX + dx, y: d.tileY + dy } : t))
+        prev.map((t) =>
+          t.id === d.id ? { ...t, x: d.tileX + dx, y: d.tileY + dy } : t
+        )
       );
       return;
     }
@@ -245,12 +190,11 @@ export default function HomePage() {
     panRef.current = null;
     try {
       (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
-    } catch {
-    }
+    } catch {}
   }
 
   function onWheel(e: React.WheelEvent) {
-    if (e.ctrlKey) return; 
+    if (e.ctrlKey) return;
     e.preventDefault();
 
     const delta = -e.deltaY;
@@ -290,9 +234,8 @@ export default function HomePage() {
         </h1>
 
         <div className="mt-4 mono text-[12px] opacity-60">
-          media: {imageCount} images · {videoCount} videos
+          media: {mediaCount} images
         </div>
-
       </section>
 
       <section className="relative w-full border-y border-black/10">
@@ -331,15 +274,11 @@ export default function HomePage() {
             </div>
 
             {tiles.map((t) => {
-              const isVideo = t.media.type === "video" || isVideoPath(t.media.path);
-
-              if (!supabase) return null;
-              const url = buildPublicUrl(supabase, t.media.path);
+              const url = buildPublicUrl(t.media.path);
 
               return (
                 <div
                   key={t.id}
-                  data-kind="tile"
                   className="absolute select-none"
                   style={{
                     left: t.x,
@@ -352,30 +291,19 @@ export default function HomePage() {
                   }}
                   onPointerDown={(e) => onTilePointerDown(e, t.id)}
                 >
-                  {isVideo ? (
-                    <video
-                      src={url}
-                      muted
-                      playsInline
-                      preload="metadata"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={url}
-                      alt=""
-                      draggable={false}
-                      className="w-full h-full object-cover"
-                      onError={() => console.warn("IMG error:", t.media.path)}
-                    />
-                  )}
+                  <img
+                    src={url}
+                    alt=""
+                    draggable={false}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               );
             })}
 
-            {!loading && mediaCount === 0 && (
+            {mediaCount === 0 && (
               <div className="absolute left-6 top-6 mono text-[12px] opacity-60">
-                No media found in bucket “{BUCKET}” (folders “image/” and “video/”).
+                No images found in refs (add &quot;media&quot; / &quot;mediaGallery&quot; in your JSON).
               </div>
             )}
           </div>
@@ -392,4 +320,3 @@ export default function HomePage() {
     </main>
   );
 }
-
