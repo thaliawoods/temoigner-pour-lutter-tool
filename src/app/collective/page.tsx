@@ -58,7 +58,6 @@ function ContactBlock() {
   return (
     <div className="w-full md:max-w-[420px]">
       <div className="border-t border-black/10 divide-y divide-black/10">
-        {/* padding vertical plus grand pour descendre le bloc */}
         <div className="grid grid-cols-12 gap-6 py-10">
           <div className="col-span-12 md:col-span-4 flex items-center">
             <div className="mono text-[13px] md:text-[15px] uppercase tracking-[0.28em] text-black/70">
@@ -66,7 +65,6 @@ function ContactBlock() {
             </div>
           </div>
 
-          {/* on centre le contenu verticalement aussi */}
           <div className="col-span-12 md:col-span-8 flex items-center">
             <div className="w-full divide-y divide-black/10">
               <div className="grid grid-cols-12 gap-6 py-3">
@@ -154,7 +152,6 @@ export default function CollectivePage() {
             </p>
           </div>
 
-          {/* CONTACT : plus bas / centré */}
           <div className="col-span-12 md:col-span-5 md:justify-self-end md:self-center">
             <ContactBlock />
           </div>
@@ -244,29 +241,30 @@ export default function CollectivePage() {
           </div>
         </Section>
 
+        {/* 2025 — du plus récent au plus ancien */}
         <Section id="2025" title="2025">
           <div className="divide-y divide-black/10">
-            <Row label="mars 2025">
-              Représentation à l’ESADSE lors du séminaire sur les actes
-              politiques autour du numérique (association Process)
-            </Row>
-            <Row label="avril / mai 2025">
-              Résidence de recherche et création (2 semaines), Aléatronome,
-              Saint-Étienne
-            </Row>
-            <Row label="juillet 2025">
-              Représentation au festival Picardiscount, Richecourt
-            </Row>
-            <Row label="juillet 2025">
-              Résidence de recherche et création (2 semaines), DROP,
-              Saint-Étienne
+            <Row label="novembre 2025">
+              Représentation au festival Desmadre, Paris
             </Row>
             <Row label="octobre / novembre 2025">
               Résidence de recherche et création Sonarea (2 semaines), AADN
               &amp; GRAME CNCM, Villeurbanne
             </Row>
-            <Row label="novembre 2025">
-              Représentation au festival Desmadre, Paris
+            <Row label="juillet 2025">
+              Résidence de recherche et création (2 semaines), DROP,
+              Saint-Étienne
+            </Row>
+            <Row label="juillet 2025">
+              Représentation au festival Picardiscount, Richecourt
+            </Row>
+            <Row label="avril / mai 2025">
+              Résidence de recherche et création (2 semaines), Aléatronome,
+              Saint-Étienne
+            </Row>
+            <Row label="mars 2025">
+              Représentation à l’ESADSE lors du séminaire sur les actes
+              politiques autour du numérique (association Process)
             </Row>
           </div>
         </Section>
