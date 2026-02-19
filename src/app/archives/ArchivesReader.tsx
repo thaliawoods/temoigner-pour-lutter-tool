@@ -381,7 +381,7 @@ export default function ArchivesReader() {
                   {selected.location ? ` · ${selected.location}` : ""}
                 </div>
 
-                <div className="mt-6 text-[13px] leading-relaxed text-zinc-700 max-w-[60ch]">
+                {/* <div className="mt-6 text-[13px] leading-relaxed text-zinc-700 max-w-[60ch]">
                   {selected.notes?.trim() ? (
                     <p>{selected.notes}</p>
                   ) : (
@@ -390,7 +390,7 @@ export default function ArchivesReader() {
                       bibliographie, tags)
                     </p>
                   )}
-                </div>
+                </div> */}
 
                 {(selected.sourceLabel || selected.sourceUrl) && (
                   <div className="mt-6 text-sm text-zinc-600">

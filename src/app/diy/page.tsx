@@ -247,7 +247,11 @@ function PoolCard({
 
       <div className="relative p-3">
         <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-          {kind === "image" ? "IMAGE" : kind === "video" ? "VIDEO" : prettyType(r.type)}
+          {kind === "image"
+            ? "IMAGE"
+            : kind === "video"
+            ? "VIDEO"
+            : prettyType(r.type)}
         </div>
 
         <div className="mt-2 text-[13px] leading-snug text-zinc-900">
@@ -355,7 +359,11 @@ function CanvasBlock({
 
       <div className="absolute inset-x-0 bottom-0 p-3 bg-white/70 backdrop-blur-[2px]">
         <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-          {kind === "image" ? "IMAGE" : kind === "video" ? "VIDEO" : prettyType(r.type)}
+          {kind === "image"
+            ? "IMAGE"
+            : kind === "video"
+            ? "VIDEO"
+            : prettyType(r.type)}
         </div>
         <div className="mt-1 text-[12px] leading-snug text-zinc-900">
           {trunc(r.title, 44)}
@@ -368,7 +376,6 @@ function CanvasBlock({
 export default function DIYPage() {
   const baseRefs = useMemo(() => getAllReferences(), []);
 
-  // ✅ uniquement refs qui ont un media (main)
   const refs = useMemo(() => {
     return baseRefs.filter((r) => Boolean(r.media));
   }, [baseRefs]);
@@ -395,7 +402,8 @@ export default function DIYPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const captureRef = useRef<HTMLDivElement | null>(null);
+
+  const canvasCaptureRef = useRef<HTMLDivElement | null>(null);
 
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
 
@@ -629,6 +637,68 @@ export default function DIYPage() {
     startY: number;
   } | null>(null);
 
+  const resizeRef = useRef<{
+    id: string;
+    startClientX: number;
+    startClientY: number;
+    startW: number;
+    startH: number;
+  } | null>(null);
+
+  const MIN_W = 120;
+  const MIN_H = 90;
+
+  const onResizeDown = (e: React.PointerEvent, it: CanvasItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setSelectedId(it.id);
+
+    resizeRef.current = {
+      id: it.id,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startW: it.w,
+      startH: it.h,
+    };
+
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  };
+
+  const onResizeMove = (e: React.PointerEvent) => {
+    const r = resizeRef.current;
+    if (!r) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const dx = e.clientX - r.startClientX;
+    const dy = e.clientY - r.startClientY;
+
+    const c = rects.canvas;
+
+    setItems((prev) =>
+      prev.map((p) => {
+        if (p.id !== r.id) return p;
+
+        let nextW = Math.max(MIN_W, r.startW + dx);
+        let nextH = Math.max(MIN_H, r.startH + dy);
+
+        nextW = Math.min(nextW, c.w - p.x - 10);
+        nextH = Math.min(nextH, c.h - p.y - 10);
+
+        return { ...p, w: nextW, h: nextH };
+      })
+    );
+  };
+
+  const onResizeUp = (e: React.PointerEvent) => {
+    if (!resizeRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    resizeRef.current = null;
+  };
+
   const onBlockDown = (e: React.PointerEvent, it: CanvasItem) => {
     e.preventDefault();
     e.stopPropagation();
@@ -690,11 +760,13 @@ export default function DIYPage() {
   };
 
   const downloadPDF = async () => {
-    if (!captureRef.current) return;
+    const node = canvasCaptureRef.current;
+    if (!node) return;
+
     const { toPng } = await import("html-to-image");
     const { jsPDF } = await import("jspdf");
 
-    const dataUrl = await toPng(captureRef.current, {
+    const dataUrl = await toPng(node, {
       cacheBust: true,
       pixelRatio: 2,
       backgroundColor: "#ffffff",
@@ -707,37 +779,17 @@ export default function DIYPage() {
     });
 
     const pdf = new jsPDF({
-      orientation: "landscape",
-      unit: "pt",
-      format: "a4",
+      orientation: img.width > img.height ? "landscape" : "portrait",
+      unit: "px",
+      format: [img.width, img.height],
     });
 
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-
-    const imgRatio = img.width / img.height;
-    const pageRatio = pageW / pageH;
-
-    let drawW = pageW;
-    let drawH = pageH;
-
-    if (imgRatio > pageRatio) {
-      drawW = pageW;
-      drawH = pageW / imgRatio;
-    } else {
-      drawH = pageH;
-      drawW = pageH * imgRatio;
-    }
-
-    const px = (pageW - drawW) / 2;
-    const py = (pageH - drawH) / 2;
-
-    pdf.addImage(dataUrl, "PNG", px, py, drawW, drawH);
-    pdf.save("diy-composition.pdf");
+    pdf.addImage(dataUrl, "PNG", 0, 0, img.width, img.height);
+    pdf.save("diy-canvas.pdf");
   };
 
   const downloadVideo = async () => {
-    const ref = captureRef.current;
+    const ref = canvasCaptureRef.current;
     if (!ref) return;
 
     const html2canvas = (await import("html2canvas")).default;
@@ -791,7 +843,7 @@ export default function DIYPage() {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "diy-composition.webm";
+    a.download = "diy-canvas.webm";
     a.click();
 
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -889,7 +941,6 @@ export default function DIYPage() {
               })}
 
               <div
-                ref={captureRef}
                 className="absolute"
                 style={{
                   left: rects.canvas.x,
@@ -899,7 +950,9 @@ export default function DIYPage() {
                   background: "#fff",
                 }}
               >
+                {/* ✅ CANVAS (capturé pour export) */}
                 <div
+                  ref={canvasCaptureRef}
                   className="absolute border border-zinc-200 bg-white"
                   style={{
                     left: 0,
@@ -933,7 +986,9 @@ export default function DIYPage() {
                         key={it.id}
                         className={[
                           "absolute bg-white border border-zinc-200 select-none overflow-hidden",
-                          selectedId === it.id ? "outline outline-1 outline-black" : "",
+                          selectedId === it.id
+                            ? "outline outline-1 outline-black"
+                            : "",
                         ].join(" ")}
                         style={{
                           left: it.x,
@@ -954,11 +1009,24 @@ export default function DIYPage() {
                           onPointerMove={() => {}}
                           onPointerUp={() => {}}
                         />
+
+                        {/* ✅ resize handle */}
+                        {selectedId === it.id ? (
+                          <div
+                            className="absolute right-1 bottom-1 h-3 w-3 border border-black bg-white cursor-se-resize"
+                            onPointerDown={(e) => onResizeDown(e, it)}
+                            onPointerMove={onResizeMove}
+                            onPointerUp={onResizeUp}
+                            onPointerCancel={onResizeUp}
+                            title="resize"
+                          />
+                        ) : null}
                       </div>
                     );
                   })}
                 </div>
 
+                {/* CONSOLE (non capturée) */}
                 <div
                   className="absolute border border-zinc-200 bg-white"
                   style={{

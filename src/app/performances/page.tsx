@@ -138,7 +138,7 @@ export default function PerformancesPage() {
         <div className="mt-4 mono text-[12px] opacity-60">
           {loading
             ? "loading…"
-            : `videos: ${performances.length} (bucket: ${BUCKET}/${FOLDER})`}
+            : `videos: ${performances.length}`}
         </div>
 
         <div className="mt-10 space-y-12">
