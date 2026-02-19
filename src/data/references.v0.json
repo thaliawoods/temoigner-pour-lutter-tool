@@ -180,19 +180,36 @@
       "notes": "",
       "tags": []
     },
+{
+  "id": "collectif-witchpdx",
+  "type": "collectif",
+  "title": "@Witchpdx",
+  "creator": null,
+  "year": null,
+  "yearRange": null,
+  "location": "Portland",
+  "sourceLabel": "Instagram",
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": [
     {
-      "id": "collectif-witchpdx",
-      "type": "collectif",
-      "title": "@Witchpdx",
-      "creator": null,
-      "year": null,
-      "yearRange": null,
-      "location": "Portland",
-      "sourceLabel": "Instagram",
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
+      "kind": "image",
+      "src": "image/witchpdx_1.png",
+      "alt": "@Witchpdx — Portland (Instagram)"
     },
+    {
+      "kind": "image",
+      "src": "image/witchpdx_2.png",
+      "alt": "@Witchpdx — Portland (Instagram)"
+    },
+    {
+      "kind": "image",
+      "src": "image/witchpdx_3.png",
+      "alt": "@Witchpdx — Portland (Instagram)"
+    }
+  ]
+},
 
     {
       "id": "film-allison-swank-scum-boy-2021",
@@ -377,19 +394,24 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "jeu-angela-washko-the-game-the-game-2018",
-      "type": "jeu_video",
-      "title": "The Game: The Game",
-      "creator": "Angela Washko",
-      "year": 2018,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "jeu-angela-washko-the-game-the-game-2018",
+  "type": "jeu_video",
+  "title": "The Game: The Game",
+  "creator": "Angela Washko",
+  "year": 2018,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "audio",
+    "src": "audio/Angela Washko - the game_the game .mp3",
+    "alt": "The Game: The Game — Angela Washko (2018)"
+  }
+},
 {
   "id": "jeu-celine-tricart-fight-back-2023",
   "type": "jeu_video",
@@ -639,19 +661,36 @@
       "notes": "",
       "tags": []
     },
+{
+  "id": "texte-laboria-cuboniks-manifeste-xenofeministe-2019",
+  "type": "texte",
+  "title": "Manifeste Xénoféministe",
+  "creator": "Laboria Cuboniks",
+  "year": 2019,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": "Éditions entremonde",
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": [
     {
-      "id": "texte-laboria-cuboniks-manifeste-xenofeministe-2019",
-      "type": "texte",
-      "title": "Manifeste Xénoféministe",
-      "creator": "Laboria Cuboniks",
-      "year": 2019,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": "Éditions entremonde",
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
+      "kind": "image",
+      "src": "image/xf 1 .png",
+      "alt": "Manifeste Xénoféministe — Laboria Cuboniks (2019)"
     },
+    {
+      "kind": "image",
+      "src": "image/xf 1.png",
+      "alt": "Manifeste Xénoféministe — Laboria Cuboniks (2019)"
+    },
+    {
+      "kind": "image",
+      "src": "image/xf 2 .png",
+      "alt": "Manifeste Xénoféministe — Laboria Cuboniks (2019)"
+    }
+  ]
+},
     {
       "id": "texte-lebogang-mokoena-une-beaute-desordonnee-vers-une-langue-non-binaire-2023",
       "type": "texte",
@@ -748,32 +787,42 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "musique-anne-sylvestre-non-tu-n-as-pas-de-nom-1974",
-      "type": "musique",
-      "title": "Non, tu n’as pas de nom",
-      "creator": "Anne Sylvestre",
-      "year": 1974,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
-    {
-      "id": "musique-anne-sylvestre-une-sorciere-comme-les-autres-1975",
-      "type": "musique",
-      "title": "Une sorcière comme les autres",
-      "creator": "Anne Sylvestre",
-      "year": 1975,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "musique-anne-sylvestre-non-tu-n-as-pas-de-nom-1974",
+  "type": "musique",
+  "title": "Non, tu n’as pas de nom",
+  "creator": "Anne Sylvestre",
+  "year": 1974,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "audio",
+    "src": "audio/Anne Sylvestre - Non tu nas pas de nom -  Chanson francaise.mp3",
+    "alt": "Non, tu n’as pas de nom — Anne Sylvestre (1974)"
+  }
+},
+{
+  "id": "musique-anne-sylvestre-une-sorciere-comme-les-autres-1975",
+  "type": "musique",
+  "title": "Une sorcière comme les autres",
+  "creator": "Anne Sylvestre",
+  "year": 1975,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "audio",
+    "src": "audio/Anne Sylvestre Une sorciere comme les autres  Archive INA.mp3",
+    "alt": "Une sorcière comme les autres — Anne Sylvestre (1975)"
+  }
+},
     {
       "id": "musique-bagarre-crihard-putain-d-asmr-2020",
       "type": "musique",
@@ -1247,19 +1296,24 @@
       "tags": []
     },
 
-    {
-      "id": "podcast-anas-da-recentrer-les-marges-et-decentrer-la-norme-2022",
-      "type": "podcast",
-      "title": "Recentrer les marges et décentrer la norme",
-      "creator": "Anas Da",
-      "year": 2022,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": "À l’intersection",
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "podcast-anas-da-recentrer-les-marges-et-decentrer-la-norme-2022",
+  "type": "podcast",
+  "title": "Recentrer les marges et décentrer la norme",
+  "creator": "Anas Da",
+  "year": 2022,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": "À l’intersection",
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "audio",
+    "src": "audio/a l'intersection - anas daif.mp3",
+    "alt": "Recentrer les marges et décentrer la norme — Anas Da (2022)"
+  }
+},
     {
       "id": "podcast-charlotte-bienaime-des-femmes-violentes-2021",
       "type": "podcast",
