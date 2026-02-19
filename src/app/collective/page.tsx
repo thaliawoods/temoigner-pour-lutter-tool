@@ -13,11 +13,11 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="py-5">
+    <section id={id} className="py-8">
       <div className="mx-auto w-full max-w-[1120px] px-6">
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-6 items-center">
           <div className="col-span-12 md:col-span-3">
-            <div className="mono text-[11px] uppercase tracking-widest text-black/60">
+            <div className="mono text-[13px] md:text-[15px] uppercase tracking-[0.28em] text-black/70">
               {title}
             </div>
           </div>
@@ -50,53 +50,75 @@ function Row({
   );
 }
 
+/**
+ * CONTACT en haut à droite, mais plus bas (centré verticalement)
+ * + contenu au milieu (pas collé en haut)
+ */
 function ContactBlock() {
   return (
     <div className="w-full md:max-w-[420px]">
-      <div className="divide-y divide-black/10 border-t border-black/10">
-        <div className="grid grid-cols-12 gap-6 py-4">
-          <div className="col-span-12 md:col-span-4">
-            <div className="mono text-[11px] uppercase tracking-widest text-black/60">
+      <div className="border-t border-black/10 divide-y divide-black/10">
+        {/* padding vertical plus grand pour descendre le bloc */}
+        <div className="grid grid-cols-12 gap-6 py-10">
+          <div className="col-span-12 md:col-span-4 flex items-center">
+            <div className="mono text-[13px] md:text-[15px] uppercase tracking-[0.28em] text-black/70">
               contact
             </div>
           </div>
 
-          <div className="col-span-12 md:col-span-8">
-            <div className="space-y-3 text-[14px] leading-6">
-              <div>
-                <div className="mono text-[11px] uppercase tracking-widest text-black/50">
-                  email
+          {/* on centre le contenu verticalement aussi */}
+          <div className="col-span-12 md:col-span-8 flex items-center">
+            <div className="w-full divide-y divide-black/10">
+              <div className="grid grid-cols-12 gap-6 py-3">
+                <div className="col-span-12 md:col-span-4">
+                  <div className="mono text-[11px] uppercase tracking-widest text-black/55">
+                    email
+                  </div>
                 </div>
-                <a
-                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                  href="mailto:elymarioncollective@gmail.com"
-                >
-                  elymarioncollective@gmail.com
-                </a>
+                <div className="col-span-12 md:col-span-8">
+                  <div className="text-[14px] leading-6 text-black/90">
+                    <a
+                      className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                      href="mailto:elymarioncollective@gmail.com"
+                    >
+                      elymarioncollective@gmail.com
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <div className="mono text-[11px] uppercase tracking-widest text-black/50">
-                  instagram
+              <div className="grid grid-cols-12 gap-6 py-3">
+                <div className="col-span-12 md:col-span-4">
+                  <div className="mono text-[11px] uppercase tracking-widest text-black/55">
+                    instagram
+                  </div>
                 </div>
-                <a
-                  className="underline underline-offset-4 hover:opacity-70 transition-opacity"
-                  href="https://instagram.com/ely.marion.collective"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  @ely.marion.collective
-                </a>
+                <div className="col-span-12 md:col-span-8">
+                  <div className="text-[14px] leading-6 text-black/90">
+                    <a
+                      className="underline underline-offset-4 hover:opacity-70 transition-opacity"
+                      href="https://instagram.com/ely.marion.collective"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      @ely.marion.collective
+                    </a>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <div className="mono text-[11px] uppercase tracking-widest text-black/50">
-                  phones
+              <div className="grid grid-cols-12 gap-6 py-3">
+                <div className="col-span-12 md:col-span-4">
+                  <div className="mono text-[11px] uppercase tracking-widest text-black/55">
+                    phones
+                  </div>
                 </div>
-                <div className="text-black/90">
-                  Ely : <span className="mono">06 32 33 71 02</span>
-                  <br />
-                  Marion : <span className="mono">06 27 62 41 43</span>
+                <div className="col-span-12 md:col-span-8">
+                  <div className="text-[14px] leading-6 text-black/90">
+                    Ely : 06 32 33 71 02
+                    <br />
+                    Marion : 06 27 62 41 43
+                  </div>
                 </div>
               </div>
             </div>
@@ -119,21 +141,21 @@ export default function CollectivePage() {
               collective
             </div>
 
-            <h1 className="mt-3 text-[44px] leading-[1.02] font-semibold tracking-tight">
+            <h1 className="mt-3 font-sans text-[56px] leading-[1.02] tracking-[-0.02em]">
               Ely &amp; Marion Collective
             </h1>
 
             <p className="mt-5 max-w-[64ch] text-[14px] leading-6 text-black/85">
               Le duo Ely &amp; Marion est né avec l’intention de créer un outil
               de diffusion des luttes féministes. La collective est composée de
-              deux jeunes artistes, <strong>Elyette Gauthier</strong> et{" "}
-              <strong>Marion Serclérat</strong>, récemment diplômées du DNSEP
-              Art contemporain — Design contemporain, mention Espace, à l’École
-              d’Art et de Design de Saint-Étienne.
+              deux jeunes artistes, Elyette Gauthier et Marion Serclérat,
+              récemment diplômées du DNSEP Art contemporain — Design contemporain,
+              mention Espace, à l’École d’Art et de Design de Saint-Étienne.
             </p>
           </div>
 
-          <div className="col-span-12 md:col-span-5 md:justify-self-end">
+          {/* CONTACT : plus bas / centré */}
+          <div className="col-span-12 md:col-span-5 md:justify-self-end md:self-center">
             <ContactBlock />
           </div>
         </div>
@@ -189,10 +211,9 @@ export default function CollectivePage() {
             <Row label="dispositif">
               Le dispositif met en relation une bibliothèque de références :
               extraits sonores (podcasts, musique, lectures performées) et
-              bibliothèque visuelle (image textuelle, photographie, extraits
-              vidéo / films), joués en simultané et en direct. La performance
-              est aussi pensée comme un processus de diffusion et un outil de
-              dialogue.
+              bibliothèque visuelle (image textuelle, photographie, extraits vidéo
+              / films), joués en simultané et en direct. La performance est aussi
+              pensée comme un processus de diffusion et un outil de dialogue.
             </Row>
 
             <Row label="navigation">
