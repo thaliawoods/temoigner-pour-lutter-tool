@@ -40,38 +40,44 @@
       "notes": "",
       "tags": []
     },
+{
+  "id": "collectif-club-mad-mini-guide-du-langage-inclusif-2019",
+  "type": "collectif",
+  "title": "Mini guide du langage inclusif",
+  "creator": "Club Mad",
+  "year": 2019,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/clubmed pdf .png"
+  },
+  "mediaGallery": [
+    { "kind": "image", "src": "image/clubmed 2.png" },
+    { "kind": "image", "src": "image/clubmed pdf 1.png" },
+    { "kind": "image", "src": "image/clubmed pdf 3.png" },
+    { "kind": "image", "src": "image/clubmed pdf 4.png" },
+    { "kind": "image", "src": "image/clubmed pdf 5.png" },
+    { "kind": "image", "src": "image/clubmed pdf 6.png" },
+    { "kind": "image", "src": "image/clubmed pdf 7.png" },
+    { "kind": "image", "src": "image/clubmed pdf 8.png" },
+    { "kind": "image", "src": "image/clubmed pdf 9.png" },
+    { "kind": "image", "src": "image/clubmed pdf 10.png" },
+    { "kind": "image", "src": "image/clubmed pdf 11.png" },
+    { "kind": "image", "src": "image/clubmed pdf 13.png" },
+    { "kind": "image", "src": "image/clubmed pdf 14.png" },
+
     {
-      "id": "collectif-club-mad-mini-guide-du-langage-inclusif-2019",
-      "type": "collectif",
-      "title": "Mini guide du langage inclusif",
-      "creator": "Club Mad",
-      "year": 2019,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/clubmed pdf .png"
-      },
-      "mediaGallery": [
-        { "kind": "image", "src": "image/clubmed 2.png" },
-        { "kind": "image", "src": "image/clubmed pdf 1.png" },
-        { "kind": "image", "src": "image/clubmed pdf 3.png" },
-        { "kind": "image", "src": "image/clubmed pdf 4.png" },
-        { "kind": "image", "src": "image/clubmed pdf 5.png" },
-        { "kind": "image", "src": "image/clubmed pdf 6.png" },
-        { "kind": "image", "src": "image/clubmed pdf 7.png" },
-        { "kind": "image", "src": "image/clubmed pdf 8.png" },
-        { "kind": "image", "src": "image/clubmed pdf 9.png" },
-        { "kind": "image", "src": "image/clubmed pdf 10.png" },
-        { "kind": "image", "src": "image/clubmed pdf 11.png" },
-        { "kind": "image", "src": "image/clubmed pdf 13.png" },
-        { "kind": "image", "src": "image/clubmed pdf 14.png" }
-      ]
-    },
+      "kind": "video",
+      "src": "video/club med 1 .mp4",
+      "alt": "Mini guide du langage inclusif — Club Mad (2019) — extrait vidéo"
+    }
+  ]
+},
     {
       "id": "collectif-colleureuses-colleureuses-lyon-marseille-valence-saint-etienne",
       "type": "collectif",
@@ -110,11 +116,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/LasTesis_1.jpeg",
-        "alt": "LASTESIS"
-      },
+      "media": { "kind": "image", "src": "image/LasTesis_1.jpeg", "alt": "LASTESIS" },
       "mediaGallery": [
         { "kind": "image", "src": "image/LasTesis_1.jpeg" },
         { "kind": "image", "src": "image/lastesis_2.jpeg" },
@@ -196,6 +198,9 @@
         { "kind": "image", "src": "image/witchpdx_1.png", "alt": "@Witchpdx — Portland (Instagram)" },
         { "kind": "image", "src": "image/witchpdx_2.png", "alt": "@Witchpdx — Portland (Instagram)" },
         { "kind": "image", "src": "image/witchpdx_3.png", "alt": "@Witchpdx — Portland (Instagram)" }
+      ],
+      "mediaGallery": [
+        { "kind": "video", "src": "video/witchpdx_video_.mp4", "alt": "@Witchpdx — extrait vidéo" }
       ]
     },
 
@@ -211,11 +216,10 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Scum Boy by Allison Swank 43 Short Films.mp3",
-        "alt": "Scum Boy — Allison Swank (2021)"
-      }
+      "media": { "kind": "audio", "src": "audio/Scum Boy by Allison Swank 43 Short Films.mp3", "alt": "Scum Boy — Allison Swank (2021)" },
+      "mediaGallery": [
+        { "kind": "video", "src": "video/Scum Boy by Allison Swank 43 Short Films.mp4", "alt": "Scum Boy — Allison Swank (2021) — vidéo" }
+      ]
     },
     {
       "id": "film-caroline-poggi-jonathan-vinel-la-fille-qui-explose-2024",
@@ -229,48 +233,52 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/la fille qui explose.mp3",
-        "alt": "La fille qui explose — Caroline Poggi; Jonathan Vinel (2024)"
-      }
+      "media": { "kind": "audio", "src": "audio/la fille qui explose.mp3", "alt": "La fille qui explose — Caroline Poggi; Jonathan Vinel (2024)" }
+    },
+    {
+      "id": "film-caroline-poggi-jonathan-vinel-how-are-you-2025",
+      "type": "film",
+      "title": "How are you?",
+      "creator": "Caroline Poggi; Jonathan Vinel",
+      "year": 2025,
+      "yearRange": null,
+      "location": null,
+      "sourceLabel": null,
+      "sourceUrl": "",
+      "notes": "",
+      "tags": [],
+      "media": { "kind": "audio", "src": "audio/How Are You  Clip  Berlinale 2025.wav", "alt": "How Are You? — Caroline Poggi & Jonathan Vinel (Berlinale 2025) — extrait audio" }
     },
 {
-  "id": "film-caroline-poggi-jonathan-vinel-how-are-you-2025",
+  "id": "film-deep-and-cheap-media-suspendue-2023",
   "type": "film",
-  "title": "How are you?",
-  "creator": "Caroline Poggi; Jonathan Vinel",
-  "year": 2025,
+  "title": "SUSPENDUE",
+  "creator": "Deep and cheap media",
+  "year": 2023,
   "yearRange": null,
   "location": null,
   "sourceLabel": null,
-  "sourceUrl": "",
+  "sourceUrl": null,
   "notes": "",
   "tags": [],
   "media": {
     "kind": "audio",
-    "src": "audio/How Are You  Clip  Berlinale 2025.wav",
-    "alt": "How Are You? — Caroline Poggi & Jonathan Vinel (Berlinale 2025) — extrait audio"
-  }
-},
+    "src": "audio/SUSPENDUE.mp3",
+    "alt": "SUSPENDUE — Deep and cheap media (2023)"
+  },
+  "mediaGallery": [
     {
-      "id": "film-deep-and-cheap-media-suspendue-2023",
-      "type": "film",
-      "title": "SUSPENDUE",
-      "creator": "Deep and cheap media",
-      "year": 2023,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/SUSPENDUE.mp3",
-        "alt": "SUSPENDUE — Deep and cheap media (2023)"
-      }
+      "kind": "video",
+      "src": "video/SUSPENDUE - TEASER.mp4",
+      "alt": "SUSPENDUE — teaser vidéo"
     },
+    {
+      "kind": "video",
+      "src": "video/Deepncheap. .mp4",
+      "alt": "Deep and cheap media — compilation/extrait vidéo"
+    }
+  ]
+},
     {
       "id": "film-deep-and-cheap-media-indelebile-graffiti-politique-2023",
       "type": "film",
@@ -309,47 +317,28 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Espace Cour de récréation Court-métrage dEléanor Gilbert 2014 Montage.mp3",
-        "alt": "Espace — Éléonore Gilbert (2014)"
-      }
-    },
-{
-  "id": "film-julia-maura-la-ville-en-feu-2023",
-  "type": "film",
-  "title": "La ville en feu",
-  "creator": "Julia Maura",
-  "year": 2023,
-  "yearRange": null,
-  "location": null,
-  "sourceLabel": null,
-  "sourceUrl": null,
-  "notes": "",
-  "tags": [],
-  "media": {
-    "kind": "audio",
-    "src": "audio/graffiti ville en feu -ok-.mp3",
-    "alt": "La ville en feu — Julia Maura (2023) — extrait audio"
-  },
-  "mediaGallery": [
-    {
-      "kind": "audio",
-      "src": "audio/graffiti ville en feu -ok-.mp3",
-      "alt": "La ville en feu — Julia Maura (2023) — extrait audio 1"
+      "media": { "kind": "audio", "src": "audio/Espace Cour de récréation Court-métrage dEléanor Gilbert 2014 Montage.mp3", "alt": "Espace — Éléonore Gilbert (2014)" }
     },
     {
-      "kind": "audio",
-      "src": "audio/graffiti-la ville en feu 2.mp3",
-      "alt": "La ville en feu — Julia Maura (2023) — extrait audio 2"
+      "id": "film-julia-maura-la-ville-en-feu-2023",
+      "type": "film",
+      "title": "La ville en feu",
+      "creator": "Julia Maura",
+      "year": 2023,
+      "yearRange": null,
+      "location": null,
+      "sourceLabel": null,
+      "sourceUrl": null,
+      "notes": "",
+      "tags": [],
+      "media": { "kind": "audio", "src": "audio/graffiti ville en feu -ok-.mp3", "alt": "La ville en feu — Julia Maura (2023) — extrait audio" },
+      "mediaGallery": [
+        { "kind": "audio", "src": "audio/graffiti ville en feu -ok-.mp3", "alt": "La ville en feu — extrait audio 1" },
+        { "kind": "audio", "src": "audio/graffiti-la ville en feu 2.mp3", "alt": "La ville en feu — extrait audio 2" },
+        { "kind": "audio", "src": "audio/graffiti-la ville en feu.mp3", "alt": "La ville en feu — extrait audio 3" },
+        { "kind": "video", "src": "video/La ville en feu.mp4", "alt": "La ville en feu — Julia Maura (2023) — vidéo" }
+      ]
     },
-    {
-      "kind": "audio",
-      "src": "audio/graffiti-la ville en feu.mp3",
-      "alt": "La ville en feu — Julia Maura (2023) — extrait audio 3"
-    }
-  ]
-},
     {
       "id": "film-nathalie-magnan-internautes-1995",
       "type": "film",
@@ -374,7 +363,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/TabitaRezaire_DEEPDOWNTIDAL_2017.mp4", "alt": "DEEP DOWN TIDAL — Tabita Rezaire (2017) — vidéo" }
     },
     {
       "id": "film-the-sun-ladies-2017",
@@ -388,11 +378,10 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/The Sun Ladies Trailer.mp3",
-        "alt": "The Sun Ladies (Trailer)"
-      }
+      "media": { "kind": "audio", "src": "audio/The Sun Ladies Trailer.mp3", "alt": "The Sun Ladies (Trailer)" },
+      "mediaGallery": [
+        { "kind": "video", "src": "video/The Sun Ladies Trailer.mp4", "alt": "The Sun Ladies — trailer vidéo" }
+      ]
     },
     {
       "id": "film-total-refusal-hardly-working-2022",
@@ -446,11 +435,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Angela Washko - the game_the game .mp3",
-        "alt": "The Game: The Game — Angela Washko (2018)"
-      }
+      "media": { "kind": "audio", "src": "audio/Angela Washko - the game_the game .mp3", "alt": "The Game: The Game — Angela Washko (2018)" }
     },
     {
       "id": "jeu-celine-tricart-fight-back-2023",
@@ -464,11 +449,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/FIGHT BACK.png",
-        "alt": "FIGHT BACK — Céline Tricart (2023)"
-      }
+      "media": { "kind": "image", "src": "image/FIGHT BACK.png", "alt": "FIGHT BACK — Céline Tricart (2023)" }
     },
     {
       "id": "jeu-danielle-brathwaite-shirley-resurrection-pro-league-2020",
@@ -481,26 +462,34 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
-    },
-    {
-      "id": "jeu-dyke-studio-dyke-street-2018",
-      "type": "jeu_video",
-      "title": "Dyke Street",
-      "creator": "Dyke Studio",
-      "year": 2018,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/dykie street jpg.png",
-        "alt": "Dyke Street — Dyke Studio (2018)"
-      }
+      "media": { "kind": "video", "src": "video/danielle brathwaite-shirley resurrection 2.mp4", "alt": "Resurrection Pro League — Danielle Brathwaite-Shirley (2020) — extrait vidéo" }
     },
+{
+  "id": "jeu-dyke-studio-dyke-street-2018",
+  "type": "jeu_video",
+  "title": "Dyke Street",
+  "creator": "Dyke Studio",
+  "year": 2018,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/dykie street jpg.png",
+    "alt": "Dyke Street — Dyke Studio (2018)"
+  },
+  "mediaGallery": [
+    {
+      "kind": "video",
+      "src": "video/dykie street .mp4",
+      "alt": "Dyke Street — Dyke Studio (2018) — extrait vidéo"
+    }
+  ]
+},
     {
       "id": "jeu-guerrilla-game-horizon-zero-dawn-2017",
       "type": "jeu_video",
@@ -525,7 +514,12 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/plastisapiens 1.mp4", "alt": "Plastisapiens — extrait vidéo 1" },
+      "mediaGallery": [
+        { "kind": "video", "src": "video/plastisapiens 1.mp4", "alt": "Plastisapiens — extrait vidéo 1" },
+        { "kind": "video", "src": "video/plastisapiens 2.mp4", "alt": "Plastisapiens — extrait vidéo 2" }
+      ]
     },
     {
       "id": "jeu-keiken-wisdom-for-love-3-0-2022",
@@ -682,11 +676,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/la terreur femine .png",
-        "alt": "La terreur féministe — Irene (2015)"
-      }
+      "media": { "kind": "image", "src": "image/la terreur femine .png", "alt": "La terreur féministe — Irene (2015)" }
     },
     {
       "id": "texte-eloge-du-feminisme-extremiste-2021",
@@ -825,10 +815,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Anne Sylvestre - Non tu nas pas de nom - Chanson française.mp3"
-      }
+      "media": { "kind": "audio", "src": "audio/Anne Sylvestre - Non tu nas pas de nom - Chanson française.mp3" }
     },
     {
       "id": "musique-anne-sylvestre-une-sorciere-comme-les-autres-1975",
@@ -842,10 +829,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Anne Sylvestre Une sorcière comme les autres Archive INA.mp3"
-      }
+      "media": { "kind": "audio", "src": "audio/Anne Sylvestre Une sorcière comme les autres Archive INA.mp3" }
     },
     {
       "id": "musique-bagarre-crihard-putain-d-asmr-2020",
@@ -859,10 +843,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Putain d'Asmr Poético Trash (prod beton_matin).mp3"
-      }
+      "media": { "kind": "audio", "src": "audio/Putain d'Asmr Poético Trash (prod beton_matin).mp3" }
     },
     {
       "id": "musique-poetic-trash-2020",
@@ -1205,11 +1186,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/roxanne maillet copie 2.jpeg",
-        "alt": "Tee-shirt — Roxane Maillet (2020)"
-      }
+      "media": { "kind": "image", "src": "image/roxanne maillet copie 2.jpeg", "alt": "Tee-shirt — Roxane Maillet (2020)" }
     },
     {
       "id": "oeuvre_picturale-tabita-rezaire-fonderie-darling-2017",
@@ -1262,11 +1239,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/affiche_transhackfeministconvergence_calafou_2014.png",
-        "alt": "Affiche Transhackfeministe Convergence — Calafou (2014)"
-      }
+      "media": { "kind": "image", "src": "image/affiche_transhackfeministconvergence_calafou_2014.png", "alt": "Affiche Transhackfeministe Convergence — Calafou (2014)" }
     },
     {
       "id": "oeuvre_picturale-transhackfeministe-convergence-transhackfeministe-convergence-2022",
@@ -1280,11 +1253,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "image",
-        "src": "image/affiche_transhackfeministconveregence_calafou_2022.png",
-        "alt": "Affiche Transhackfeministe Convergence — Calafou (2022)"
-      }
+      "media": { "kind": "image", "src": "image/affiche_transhackfeministconveregence_calafou_2022.png", "alt": "Affiche Transhackfeministe Convergence — Calafou (2022)" }
     },
 
     {
@@ -1298,7 +1267,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/not all men joelle Sambi .mp4", "alt": "Caillasses, Not all men — Joëlle Sambi (2021) — vidéo" }
     },
     {
       "id": "performance-karen-finley-it-s-my-body-1994",
@@ -1328,24 +1298,25 @@
       "tags": [],
       "media": { "kind": "audio", "src": "audio/morphée morphine - la pédale cosmique.mp3" }
     },
-{
-  "id": "performance-rebecca-chaillon-les-guerrieres-de-monique-wittig-2020",
-  "type": "performance",
-  "title": "LES GUERRIÈRES DE MONIQUE WITTIG",
-  "creator": "Rebecca Chaillon",
-  "year": 2020,
-  "yearRange": null,
-  "location": null,
-  "sourceLabel": null,
-  "sourceUrl": "",
-  "notes": "Virginie Despentes; Anne Garréta; Laure Murat & Suzette Robichon",
-  "tags": [],
-  "media": {
-    "kind": "audio",
-    "src": "audio/monique wittig - les guerilleres.mp3",
-    "alt": "LES GUERRIÈRES DE MONIQUE WITTIG — Rebecca Chaillon (2020) — extrait audio"
-  }
-},
+    {
+      "id": "performance-rebecca-chaillon-les-guerrieres-de-monique-wittig-2020",
+      "type": "performance",
+      "title": "LES GUERRIÈRES DE MONIQUE WITTIG",
+      "creator": "Rebecca Chaillon",
+      "year": 2020,
+      "yearRange": null,
+      "location": null,
+      "sourceLabel": null,
+      "sourceUrl": "",
+      "notes": "Virginie Despentes; Anne Garréta; Laure Murat & Suzette Robichon",
+      "tags": [],
+      "media": {
+        "kind": "audio",
+        "src": "audio/monique wittig - les guerilleres.mp3",
+        "alt": "LES GUERRIÈRES DE MONIQUE WITTIG — Rebecca Chaillon (2020) — extrait audio"
+      }
+    },
+
     {
       "id": "podcast-anas-da-recentrer-les-marges-et-decentrer-la-norme-2022",
       "type": "podcast",
@@ -1386,23 +1357,20 @@
       "notes": "",
       "tags": []
     },
-{
-  "id": "podcast-france-culture-les-chemins-de-la-philosophie-donna-haraway-2021",
-  "type": "podcast",
-  "title": "Donna Haraway",
-  "creator": "France Culture — Les chemins de la philosophie",
-  "year": 2021,
-  "yearRange": null,
-  "location": null,
-  "sourceLabel": null,
-  "sourceUrl": "",
-  "notes": "",
-  "tags": [],
-  "media": {
-    "kind": "audio",
-    "src": "audio/DONNAHARAWAY.mp3",
-    "alt": "Donna Haraway — France Culture (Les chemins de la philosophie, 2021)"
-  }},
+    {
+      "id": "podcast-france-culture-les-chemins-de-la-philosophie-donna-haraway-2021",
+      "type": "podcast",
+      "title": "Donna Haraway",
+      "creator": "France Culture — Les chemins de la philosophie",
+      "year": 2021,
+      "yearRange": null,
+      "location": null,
+      "sourceLabel": null,
+      "sourceUrl": "",
+      "notes": "",
+      "tags": [],
+      "media": { "kind": "audio", "src": "audio/DONNAHARAWAY.mp3", "alt": "Donna Haraway — France Culture (Les chemins de la philosophie, 2021)" }
+    },
     {
       "id": "podcast-franceinfo-le-harcelement-sexuel-laisse-des-traces-2024",
       "type": "podcast",
@@ -1456,10 +1424,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/donna haraway - le code a changer - la science nous apparatiens .mp3"
-      }
+      "media": { "kind": "audio", "src": "audio/donna haraway - le code a changer - la science nous apparatiens .mp3" }
     },
 
     {
@@ -1473,7 +1438,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/video lente coleureuse et grapheuse .mp4", "alt": "Archives diverses — colleureuses et graffeuses — extrait vidéo" }
     },
     {
       "id": "video-colleureuses-archives-diverses-2020-2024",
@@ -1486,7 +1452,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/collagee feministe.mp4", "alt": "Archives diverses — Colleureuses — extrait vidéo" }
     },
     {
       "id": "video-danielle-shirley-brathwaite-get-home-safe-2022",
@@ -1500,7 +1467,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": { "kind": "audio", "src": "audio/Danielle Brathwaite-Shirley GET HOME SAFE (2022).mp3" }
+      "media": { "kind": "video", "src": "video/Danielle Brathwaite-Shirley GET HOME SAFE (2022).mp4", "alt": "GET HOME SAFE — Danielle-Shirley Brathwaite (2022) — vidéo" }
     },
     {
       "id": "video-delphine-seyrig-sexisme-la-colere-1972",
@@ -1514,29 +1481,22 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/Delphine Seyrig en colère contre le sexisme Archive INA.mp3"
-      }
+      "media": { "kind": "audio", "src": "audio/Delphine Seyrig en colère contre le sexisme Archive INA.mp3" }
     },
-{
-  "id": "video-francoise-verges-frustration-magazine-2024",
-  "type": "video",
-  "title": "Frustration Magazine",
-  "creator": "Françoise Vergès",
-  "year": 2024,
-  "yearRange": null,
-  "location": null,
-  "sourceLabel": null,
-  "sourceUrl": "",
-  "notes": "",
-  "tags": [],
-  "media": {
-    "kind": "audio",
-    "src": "audio/histoire crepues - francoise verges.mp3",
-    "alt": "Frustration Magazine — Françoise Vergès (2024) — extrait audio"
-  }
-},
+    {
+      "id": "video-francoise-verges-frustration-magazine-2024",
+      "type": "video",
+      "title": "Frustration Magazine",
+      "creator": "Françoise Vergès",
+      "year": 2024,
+      "yearRange": null,
+      "location": null,
+      "sourceLabel": null,
+      "sourceUrl": "",
+      "notes": "",
+      "tags": [],
+      "media": { "kind": "audio", "src": "audio/histoire crepues - francoise verges.mp3", "alt": "Frustration Magazine — Françoise Vergès (2024) — extrait audio" }
+    },
     {
       "id": "video-histoires-crepues-nos-statues-coloniales-pt-2-graffiti-a-madagascar-2024",
       "type": "video",
@@ -1576,10 +1536,7 @@
       "sourceUrl": null,
       "notes": "",
       "tags": [],
-      "media": {
-        "kind": "audio",
-        "src": "audio/El violador eres tú - LETRA COMPLETA del HIMNO FEMINISTA Un violador en tu camino.mp3"
-      }
+      "media": { "kind": "audio", "src": "audio/El violador eres tú - LETRA COMPLETA del HIMNO FEMINISTA Un violador en tu camino.mp3" }
     },
     {
       "id": "video-marinette-la-sororite-arme-politique-avec-les-colleuses-2020",
@@ -1618,7 +1575,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/Global Street Art - Mujeres Creando - Art in the Streets - MOCAtv.mp4", "alt": "Global Street Art — Mujeres Creando (2013) — vidéo" }
     },
     {
       "id": "video-rosa-menkman-shadow-knowledge-2020",
@@ -1644,7 +1602,13 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/sabrina rate 1.mp4", "alt": "Floralia — Sabrina Ratté (2021) — extrait vidéo 1" },
+      "mediaGallery": [
+        { "kind": "video", "src": "video/sabrina rate 1.mp4", "alt": "Floralia — extrait vidéo 1" },
+        { "kind": "video", "src": "video/sabriana rate 2.mp4", "alt": "Floralia — extrait vidéo 2" },
+        { "kind": "video", "src": "video/sabrina 3 .mp4", "alt": "Floralia — extrait vidéo 3" }
+      ]
     },
     {
       "id": "video-sophia-oppel-i-m-sorry-i-m-having-trouble-with-the-connection-2023",
@@ -1670,7 +1634,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/Tabita Rezaire peaceful warrior .mp4", "alt": "Peaceful Warrior — Tabita Rezaire (2017) — vidéo" }
     },
     {
       "id": "video-tabita-rezaire-premium-connect-2016",
@@ -1683,7 +1648,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/Tabita Rezaire Prenium Conect .mp4", "alt": "Premium Connect — Tabita Rezaire (2016) — vidéo" }
     },
     {
       "id": "video-tabita-rezaire-ultra-wet-recapitulation-2016",
@@ -1696,7 +1662,8 @@
       "sourceLabel": null,
       "sourceUrl": null,
       "notes": "",
-      "tags": []
+      "tags": [],
+      "media": { "kind": "video", "src": "video/tabita Rezaire ultra wet recapitulation.mp4", "alt": "Ultra Wet Recapitulation — Tabita Rezaire (2016) — vidéo" }
     },
     {
       "id": "video-yosra-mojtahedi-sexus-florus-2023",
@@ -1708,7 +1675,9 @@
       "location": null,
       "sourceLabel": null,
       "sourceUrl": null,
-      "notes": ""
+      "notes": "",
+      "tags": [],
+      "media": { "kind": "video", "src": "video/Yosra Mojtahedi sexus florus.mp4", "alt": "Sexus Florus — Yosra Mojtahedi (2023) — vidéo" }
     }
   ],
   "credits": {
