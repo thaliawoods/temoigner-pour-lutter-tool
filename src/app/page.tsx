@@ -73,9 +73,41 @@ function pickImageMediasFromRefs(refs: TPLReference[]): MediaItem[] {
 }
 
 /**
- * Petit anti-overlap (2-3 passes) pour casser l’effet “pile”.
- * C’est volontairement léger (O(n^2) mais n=37 ok).
+ * Fit view + "boost" pour arriver plus zoomé.
+ * Reset view revient exactement à cette view.
  */
+function fitViewToTiles(tiles: Tile[], viewportW: number, viewportH: number): View {
+  if (tiles.length === 0) return { x: 0, y: 0, scale: 1 };
+
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+
+  for (const t of tiles) {
+    minX = Math.min(minX, t.x);
+    minY = Math.min(minY, t.y);
+    maxX = Math.max(maxX, t.x + t.w);
+    maxY = Math.max(maxY, t.y + t.h);
+  }
+
+  const contentW = Math.max(1, maxX - minX);
+  const contentH = Math.max(1, maxY - minY);
+
+  const pad = viewportW > 900 ? 80 : 56;
+
+  const scaleX = (viewportW - pad * 2) / contentW;
+  const scaleY = (viewportH - pad * 2) / contentH;
+
+  const rawScale = Math.min(scaleX, scaleY) * 1.34;
+  const scale = clamp(rawScale, 0.35, 2.2);
+
+  const x = (viewportW - contentW * scale) / 2 - minX * scale;
+  const y = (viewportH - contentH * scale) / 2 - minY * scale;
+
+  return { x, y, scale };
+}
+
 function relaxLayout(
   tiles: Tile[],
   viewportW: number,
@@ -101,9 +133,8 @@ function relaxLayout(
 
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
 
-        // distance minimale basée sur tailles (un peu “aérée”)
         const minDist =
-          (Math.min(a.w, a.h) * 0.28 + Math.min(b.w, b.h) * 0.28) + 18;
+          Math.min(a.w, a.h) * 0.28 + Math.min(b.w, b.h) * 0.28 + 22;
 
         if (dist < minDist) {
           const push = (minDist - dist) * 0.5;
@@ -115,7 +146,6 @@ function relaxLayout(
           b.x -= ux * push;
           b.y -= uy * push;
 
-          // clamp
           a.x = clamp(a.x, pad, viewportW - pad - a.w);
           a.y = clamp(a.y, pad, viewportH - pad - a.h);
           b.x = clamp(b.x, pad, viewportW - pad - b.w);
@@ -129,7 +159,7 @@ function relaxLayout(
 }
 
 /**
- * Layout: très éparpillé (ellipse quasi plein écran) + relax anti-overlap.
+ * Layout éparpillé "raisonnable" + tailles normales (variantes mais pas extrêmes).
  */
 function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Tile[] {
   const count = media.length;
@@ -142,13 +172,10 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
   const centerX = Math.round(viewportW * 0.5);
   const centerY = Math.round(viewportH * 0.52);
 
-  // ellipse très large (quasi tout le canvas)
   const rx = Math.max(180, (viewportW - pad * 2) * 0.72);
   const ry = Math.max(160, (viewportH - pad * 2) * 0.62);
 
-  // golden angle
   const GOLDEN = Math.PI * (3 - Math.sqrt(5));
-
   const seedBase = Math.floor((viewportW * 0.21 + viewportH * 0.17 + count * 9.3) * 10);
 
   const tiles: Tile[] = media.map((m, i) => {
@@ -157,26 +184,23 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
     const r3 = seeded01(seedBase + i * 17 + 3);
     const r4 = seeded01(seedBase + i * 17 + 4);
 
-    const w = Math.round(baseW + r3 * 220);
-    const h = Math.round(baseH + r1 * 190);
+    const w = Math.round(baseW + r3 * (viewportW > 900 ? 220 : 140));
+    const h = Math.round(baseH + r1 * (viewportW > 900 ? 180 : 120));
 
-    // prog => plus d’items vers l’extérieur
     const t = count <= 1 ? 0 : i / (count - 1);
-    const prog = Math.pow(t, 0.55); // pousse plus vite vers l’extérieur
+    const prog = Math.pow(t, 0.55);
 
     const angle = i * GOLDEN + (r4 - 0.5) * 0.9;
 
     const maxRX = Math.max(60, rx - w * 0.55);
     const maxRY = Math.max(60, ry - h * 0.55);
 
-    // jitter volontairement plus fort
     const jitterX = (r1 - 0.5) * 170;
     const jitterY = (r2 - 0.5) * 140;
 
     let x = Math.round(centerX + Math.cos(angle) * (prog * maxRX) + jitterX);
     let y = Math.round(centerY + Math.sin(angle) * (prog * maxRY) + jitterY);
 
-    // clamp => visible
     x = clamp(x, pad, viewportW - pad - w);
     y = clamp(y, pad, viewportH - pad - h);
 
@@ -191,7 +215,6 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
     };
   });
 
-  // 2 passes suffisent pour 30-60 images
   return relaxLayout(tiles, viewportW, viewportH, pad, 3);
 }
 
@@ -213,6 +236,9 @@ export default function HomePage() {
   const resizeTileRef = useRef<ResizeState | null>(null);
   const panRef = useRef<PanState | null>(null);
 
+  const didInitViewRef = useRef(false);
+  const defaultViewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
+
   const mediaCount = media.length;
 
   useEffect(() => {
@@ -221,7 +247,17 @@ export default function HomePage() {
 
     const rebuild = () => {
       const rect = el.getBoundingClientRect();
-      setTiles(makeTiles(media, rect.width, rect.height));
+      const nextTiles = makeTiles(media, rect.width, rect.height);
+      setTiles(nextTiles);
+
+      if (!didInitViewRef.current) {
+        const fitted = fitViewToTiles(nextTiles, rect.width, rect.height);
+        defaultViewRef.current = fitted;
+        setView(fitted);
+        didInitViewRef.current = true;
+      } else {
+        defaultViewRef.current = fitViewToTiles(nextTiles, rect.width, rect.height);
+      }
     };
 
     rebuild();
@@ -380,7 +416,7 @@ export default function HomePage() {
   }
 
   function resetView() {
-    setView({ x: 0, y: 0, scale: 1 });
+    setView(defaultViewRef.current);
   }
 
   return (
@@ -400,7 +436,7 @@ export default function HomePage() {
           </div>
 
           <div className="mono text-[12px] opacity-50 leading-relaxed max-w-[900px]">
-            <span className="opacity-70">tips:</span>drag image - grab bottom right corner to resize - drag
+            <span className="opacity-70">tips:</span> drag image - grab bottom right corner to resize - drag
             background to pan - scroll to zoom
           </div>
         </div>
