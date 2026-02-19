@@ -1,5 +1,3 @@
-// src/app/archives/[id]/page.tsx
-
 import { notFound } from "next/navigation";
 import { getReferenceById } from "@/lib/references";
 import type { TPLMedia, TPLReference } from "@/lib/schema";

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { getAllReferences } from "@/lib/references";
 import type { TPLReference, TPLMedia } from "@/lib/schema";
-import { buildPublicUrl } from "@/lib/public-url";
+import { buildPublicUrl, preloadPublicImage } from "@/lib/public-url";
 
 type MediaItem = {
   type: "image";
@@ -21,6 +21,29 @@ type Tile = {
 };
 
 type View = { x: number; y: number; scale: number };
+
+type DragState = {
+  id: string;
+  startX: number;
+  startY: number;
+  tileX: number;
+  tileY: number;
+};
+
+type ResizeState = {
+  id: string;
+  startX: number;
+  startY: number;
+  startW: number;
+  startH: number;
+};
+
+type PanState = {
+  startX: number;
+  startY: number;
+  viewX: number;
+  viewY: number;
+};
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -49,23 +72,113 @@ function pickImageMediasFromRefs(refs: TPLReference[]): MediaItem[] {
   return [...uniq.values()];
 }
 
+/**
+ * Petit anti-overlap (2-3 passes) pour casser l’effet “pile”.
+ * C’est volontairement léger (O(n^2) mais n=37 ok).
+ */
+function relaxLayout(
+  tiles: Tile[],
+  viewportW: number,
+  viewportH: number,
+  pad: number,
+  passes: number
+): Tile[] {
+  const next = tiles.map((t) => ({ ...t }));
+
+  for (let pass = 0; pass < passes; pass++) {
+    for (let i = 0; i < next.length; i++) {
+      for (let j = i + 1; j < next.length; j++) {
+        const a = next[i];
+        const b = next[j];
+
+        const ax = a.x + a.w * 0.5;
+        const ay = a.y + a.h * 0.5;
+        const bx = b.x + b.w * 0.5;
+        const by = b.y + b.h * 0.5;
+
+        const dx = ax - bx;
+        const dy = ay - by;
+
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+        // distance minimale basée sur tailles (un peu “aérée”)
+        const minDist =
+          (Math.min(a.w, a.h) * 0.28 + Math.min(b.w, b.h) * 0.28) + 18;
+
+        if (dist < minDist) {
+          const push = (minDist - dist) * 0.5;
+          const ux = dx / dist;
+          const uy = dy / dist;
+
+          a.x += ux * push;
+          a.y += uy * push;
+          b.x -= ux * push;
+          b.y -= uy * push;
+
+          // clamp
+          a.x = clamp(a.x, pad, viewportW - pad - a.w);
+          a.y = clamp(a.y, pad, viewportH - pad - a.h);
+          b.x = clamp(b.x, pad, viewportW - pad - b.w);
+          b.y = clamp(b.y, pad, viewportH - pad - b.h);
+        }
+      }
+    }
+  }
+
+  return next;
+}
+
+/**
+ * Layout: très éparpillé (ellipse quasi plein écran) + relax anti-overlap.
+ */
 function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Tile[] {
   const count = media.length;
-  const spread = clamp(250 + count * 10, 350, 2200);
 
-  const baseW = viewportW > 900 ? 220 : 160;
-  const baseH = viewportW > 900 ? 160 : 120;
+  const baseW = viewportW > 900 ? 240 : 175;
+  const baseH = viewportW > 900 ? 175 : 130;
 
-  return media.map((m, i) => {
-    const r1 = seeded01(i + 1);
-    const r2 = seeded01(i + 2);
-    const r3 = seeded01(i + 3);
+  const pad = viewportW > 900 ? 70 : 50;
 
-    const w = Math.round(baseW + r3 * 160);
-    const h = Math.round(baseH + r1 * 140);
+  const centerX = Math.round(viewportW * 0.5);
+  const centerY = Math.round(viewportH * 0.52);
 
-    const x = Math.round(viewportW * 0.35 + (r1 - 0.5) * spread);
-    const y = Math.round(viewportH * 0.55 + (r2 - 0.5) * spread);
+  // ellipse très large (quasi tout le canvas)
+  const rx = Math.max(180, (viewportW - pad * 2) * 0.72);
+  const ry = Math.max(160, (viewportH - pad * 2) * 0.62);
+
+  // golden angle
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+
+  const seedBase = Math.floor((viewportW * 0.21 + viewportH * 0.17 + count * 9.3) * 10);
+
+  const tiles: Tile[] = media.map((m, i) => {
+    const r1 = seeded01(seedBase + i * 17 + 1);
+    const r2 = seeded01(seedBase + i * 17 + 2);
+    const r3 = seeded01(seedBase + i * 17 + 3);
+    const r4 = seeded01(seedBase + i * 17 + 4);
+
+    const w = Math.round(baseW + r3 * 220);
+    const h = Math.round(baseH + r1 * 190);
+
+    // prog => plus d’items vers l’extérieur
+    const t = count <= 1 ? 0 : i / (count - 1);
+    const prog = Math.pow(t, 0.55); // pousse plus vite vers l’extérieur
+
+    const angle = i * GOLDEN + (r4 - 0.5) * 0.9;
+
+    const maxRX = Math.max(60, rx - w * 0.55);
+    const maxRY = Math.max(60, ry - h * 0.55);
+
+    // jitter volontairement plus fort
+    const jitterX = (r1 - 0.5) * 170;
+    const jitterY = (r2 - 0.5) * 140;
+
+    let x = Math.round(centerX + Math.cos(angle) * (prog * maxRX) + jitterX);
+    let y = Math.round(centerY + Math.sin(angle) * (prog * maxRY) + jitterY);
+
+    // clamp => visible
+    x = clamp(x, pad, viewportW - pad - w);
+    y = clamp(y, pad, viewportH - pad - h);
 
     return {
       id: `image-${i}-${m.path}`,
@@ -77,6 +190,9 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
       z: i + 1,
     };
   });
+
+  // 2 passes suffisent pour 30-60 images
+  return relaxLayout(tiles, viewportW, viewportH, pad, 3);
 }
 
 export default function HomePage() {
@@ -93,20 +209,9 @@ export default function HomePage() {
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
 
-  const dragTileRef = useRef<{
-    id: string;
-    startX: number;
-    startY: number;
-    tileX: number;
-    tileY: number;
-  } | null>(null);
-
-  const panRef = useRef<{
-    startX: number;
-    startY: number;
-    viewX: number;
-    viewY: number;
-  } | null>(null);
+  const dragTileRef = useRef<DragState | null>(null);
+  const resizeTileRef = useRef<ResizeState | null>(null);
+  const panRef = useRef<PanState | null>(null);
 
   const mediaCount = media.length;
 
@@ -116,8 +221,7 @@ export default function HomePage() {
 
     const rebuild = () => {
       const rect = el.getBoundingClientRect();
-      const nextTiles = makeTiles(media, rect.width, rect.height);
-      setTiles(nextTiles);
+      setTiles(makeTiles(media, rect.width, rect.height));
     };
 
     rebuild();
@@ -126,6 +230,11 @@ export default function HomePage() {
     ro.observe(el);
 
     return () => ro.disconnect();
+  }, [media]);
+
+  useEffect(() => {
+    const MAX_PRELOAD = 120;
+    for (const m of media.slice(0, MAX_PRELOAD)) preloadPublicImage(m.path);
   }, [media]);
 
   function bringToFront(id: string) {
@@ -139,10 +248,10 @@ export default function HomePage() {
     e.stopPropagation();
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
 
+    bringToFront(id);
+
     const t = tiles.find((x) => x.id === id);
     if (!t) return;
-
-    bringToFront(id);
 
     dragTileRef.current = {
       id,
@@ -150,6 +259,24 @@ export default function HomePage() {
       startY: e.clientY,
       tileX: t.x,
       tileY: t.y,
+    };
+  }
+
+  function onResizeHandleDown(e: React.PointerEvent, id: string) {
+    e.stopPropagation();
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+
+    bringToFront(id);
+
+    const t = tiles.find((x) => x.id === id);
+    if (!t) return;
+
+    resizeTileRef.current = {
+      id,
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: t.w,
+      startH: t.h,
     };
   }
 
@@ -164,6 +291,37 @@ export default function HomePage() {
   }
 
   function onPointerMove(e: React.PointerEvent) {
+    if (resizeTileRef.current) {
+      const r = resizeTileRef.current;
+      const dx = (e.clientX - r.startX) / view.scale;
+      const dy = (e.clientY - r.startY) / view.scale;
+
+      const MIN_W = 90;
+      const MIN_H = 70;
+      const MAX_W = 1100;
+      const MAX_H = 900;
+
+      setTiles((prev) =>
+        prev.map((t) => {
+          if (t.id !== r.id) return t;
+
+          if (e.shiftKey) {
+            const ratio = r.startW / Math.max(1, r.startH);
+            const nextW = clamp(r.startW + dx, MIN_W, MAX_W);
+            const nextH = clamp(Math.round(nextW / ratio), MIN_H, MAX_H);
+            return { ...t, w: nextW, h: nextH };
+          }
+
+          return {
+            ...t,
+            w: clamp(r.startW + dx, MIN_W, MAX_W),
+            h: clamp(r.startH + dy, MIN_H, MAX_H),
+          };
+        })
+      );
+      return;
+    }
+
     if (dragTileRef.current) {
       const d = dragTileRef.current;
       const dx = (e.clientX - d.startX) / view.scale;
@@ -187,7 +345,9 @@ export default function HomePage() {
 
   function onPointerUp(e: React.PointerEvent) {
     dragTileRef.current = null;
+    resizeTileRef.current = null;
     panRef.current = null;
+
     try {
       (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
     } catch {}
@@ -229,12 +389,20 @@ export default function HomePage() {
         <div className="mono text-[11px] tracking-[0.22em] uppercase opacity-60">
           ELY &amp; MARION COLLECTIVE
         </div>
+
         <h1 className="mt-3 font-sans text-[56px] leading-[1.02] tracking-[-0.02em]">
           Témoigner pour lutter
         </h1>
 
-        <div className="mt-4 mono text-[12px] opacity-60">
-          media: {mediaCount} images
+        <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-start md:gap-10">
+          <div className="mono text-[12px] opacity-60">
+            media: {mediaCount} images
+          </div>
+
+          <div className="mono text-[12px] opacity-50 leading-relaxed max-w-[900px]">
+            <span className="opacity-70">tips:</span>drag image - grab bottom right corner to resize - drag
+            background to pan - scroll to zoom
+          </div>
         </div>
       </section>
 
@@ -252,42 +420,27 @@ export default function HomePage() {
             style={{
               transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.scale})`,
               transformOrigin: "0 0",
+              willChange: "transform",
             }}
           >
-            <div className="absolute inset-0 pointer-events-none opacity-[0.08]">
-              {Array.from({ length: 60 }).map((_, i) => {
-                const r1 = seeded01(1000 + i);
-                const r2 = seeded01(2000 + i);
-                const r3 = seeded01(3000 + i);
-                const w = 60 + Math.round(r3 * 220);
-                const h = 40 + Math.round(r1 * 180);
-                const x = Math.round(r1 * 2400);
-                const y = Math.round(r2 * 1600);
-                return (
-                  <div
-                    key={i}
-                    className="absolute border border-black/20 bg-white"
-                    style={{ left: x, top: y, width: w, height: h }}
-                  />
-                );
-              })}
-            </div>
-
-            {tiles.map((t) => {
+            {tiles.map((t, idx) => {
               const url = buildPublicUrl(t.media.path);
+              const isPriority = idx < 10;
 
               return (
                 <div
                   key={t.id}
                   className="absolute select-none"
                   style={{
-                    left: t.x,
-                    top: t.y,
+                    transform: `translate3d(${t.x}px, ${t.y}px, 0)`,
                     width: t.w,
                     height: t.h,
                     zIndex: t.z,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
                     background: "white",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                    touchAction: "none",
+                    transition:
+                      "transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), height 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
                   }}
                   onPointerDown={(e) => onTilePointerDown(e, t.id)}
                 >
@@ -295,22 +448,34 @@ export default function HomePage() {
                     src={url}
                     alt=""
                     draggable={false}
-                    className="w-full h-full object-cover"
+                    loading={isPriority ? "eager" : "lazy"}
+                    decoding="async"
+                    fetchPriority={isPriority ? "high" : "auto"}
+                    className="w-full h-full object-cover bg-black/[0.03]"
+                  />
+
+                  <div
+                    className="absolute right-0 bottom-0 w-8 h-8 cursor-se-resize z-20"
+                    onPointerDown={(e) => onResizeHandleDown(e, t.id)}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 52%, rgba(0,0,0,0.28) 53%, rgba(0,0,0,0.28) 63%, rgba(0,0,0,0) 64%)",
+                    }}
+                    aria-label="Resize"
+                    title="Resize (shift = keep ratio)"
                   />
                 </div>
               );
             })}
-
-            {mediaCount === 0 && (
-              <div className="absolute left-6 top-6 mono text-[12px] opacity-60">
-                No images found in refs (add &quot;media&quot; / &quot;mediaGallery&quot; in your JSON).
-              </div>
-            )}
           </div>
 
           <button
             type="button"
-            onClick={resetView}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              resetView();
+            }}
             className="absolute right-8 bottom-8 z-50 mono text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-5 py-3 hover:bg-black/5 transition-colors"
           >
             Reset view
