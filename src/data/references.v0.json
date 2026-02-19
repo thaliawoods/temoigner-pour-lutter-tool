@@ -1100,19 +1100,24 @@
       "notes": "",
       "tags": []
     },
-    {
-      "id": "oeuvre_picturale-roxane-maillet-tee-shirt-2020",
-      "type": "oeuvre_picturale",
-      "title": "Tee-shirt",
-      "creator": "Roxane Maillet",
-      "year": 2020,
-      "yearRange": null,
-      "location": null,
-      "sourceLabel": null,
-      "sourceUrl": null,
-      "notes": "",
-      "tags": []
-    },
+{
+  "id": "oeuvre_picturale-roxane-maillet-tee-shirt-2020",
+  "type": "oeuvre_picturale",
+  "title": "Tee-shirt",
+  "creator": "Roxane Maillet",
+  "year": 2020,
+  "yearRange": null,
+  "location": null,
+  "sourceLabel": null,
+  "sourceUrl": null,
+  "notes": "",
+  "tags": [],
+  "media": {
+    "kind": "image",
+    "src": "image/roxanne maillet copie 2.jpeg",
+    "alt": "Tee-shirt — Roxane Maillet (2020)"
+  }
+},
     {
       "id": "oeuvre_picturale-tabita-rezaire-fonderie-darling-2017",
       "type": "oeuvre_picturale",
