@@ -22,9 +22,11 @@ function sortKey(r: TPLReference) {
 }
 
 function renderMedia(media: TPLMedia | null | undefined, title: string) {
-  if (!media) return <div className="h-full w-full bg-zinc-50" />;
+  const src = media?.src;
+  if (!media || !src) return <div className="h-full w-full bg-zinc-50" />;
 
-  const url = buildPublicUrl(media.src);
+  const url = buildPublicUrl(src);
+  if (!url) return <div className="h-full w-full bg-zinc-50" />;
 
   if (media.kind === "image") {
     return (
@@ -37,6 +39,8 @@ function renderMedia(media: TPLMedia | null | undefined, title: string) {
   }
 
   if (media.kind === "video") {
+    const posterUrl = media.poster ? buildPublicUrl(media.poster) : undefined;
+
     return (
       <video
         src={url}
@@ -45,7 +49,7 @@ function renderMedia(media: TPLMedia | null | undefined, title: string) {
         playsInline
         controls
         preload="metadata"
-        poster={media.poster ? buildPublicUrl(media.poster) : undefined}
+        poster={posterUrl}
       />
     );
   }
@@ -58,7 +62,7 @@ function renderMedia(media: TPLMedia | null | undefined, title: string) {
 }
 
 function hasAnyMedia(r: TPLReference) {
-  return Boolean(r.media) || Boolean(r.mediaGallery?.length);
+  return Boolean(r.media?.src) || Boolean(r.mediaGallery?.length);
 }
 
 export default function ArchivesReader() {
@@ -109,7 +113,7 @@ export default function ArchivesReader() {
     });
   }, [refs, query]);
 
-  // ✅ sélection
+  // ✅ sélection (on garde un id même si filtered bouge)
   const [selectedId, setSelectedId] = useState<string>(() => refs[0]?.id ?? "");
 
   const selected = useMemo(() => {
@@ -341,24 +345,33 @@ export default function ArchivesReader() {
                 </div>
 
                 <div className="mt-3 grid grid-cols-6 gap-2">
-                  {gallery.map((m, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setGallerySrc(m.src)}
-                      className={[
-                        "aspect-[4/3] overflow-hidden border",
-                        i === activeIndex ? "border-zinc-900" : "border-zinc-200",
-                      ].join(" ")}
-                      title={`${selected.title} — ${i + 1}`}
-                    >
-                      <img
-                        src={buildPublicUrl(m.src)}
-                        alt={`${selected.title} — ${i + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    </button>
-                  ))}
+                  {gallery.map((m, i) => {
+                    const thumbUrl = m?.src ? buildPublicUrl(m.src) : "";
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setGallerySrc(m?.src ?? null)}
+                        className={[
+                          "aspect-[4/3] overflow-hidden border",
+                          i === activeIndex
+                            ? "border-zinc-900"
+                            : "border-zinc-200",
+                        ].join(" ")}
+                        title={`${selected.title} — ${i + 1}`}
+                      >
+                        {thumbUrl ? (
+                          <img
+                            src={thumbUrl}
+                            alt={`${selected.title} — ${i + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-zinc-50" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
