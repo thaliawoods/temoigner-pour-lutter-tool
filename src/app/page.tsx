@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { getAllReferences } from "@/lib/references";
-import type { TPLReference, TPLMedia } from "@/lib/schema";
+import React, { useEffect, useRef, useState } from "react";
 import { buildPublicUrl, preloadPublicImage } from "@/lib/public-url";
+
+const AMBIENT_SRC = buildPublicUrl("mix/ELY&MARION.WAV");
 
 type MediaItem = {
   type: "image";
@@ -52,24 +52,6 @@ function clamp(n: number, min: number, max: number): number {
 function seeded01(seed: number): number {
   const x = Math.sin(seed * 9999) * 10000;
   return x - Math.floor(x);
-}
-
-function pushIfImage(out: MediaItem[], m: TPLMedia | undefined | null) {
-  if (!m) return;
-  if (m.kind === "image") out.push({ type: "image", path: m.src });
-}
-
-function pickImageMediasFromRefs(refs: TPLReference[]): MediaItem[] {
-  const out: MediaItem[] = [];
-
-  for (const r of refs) {
-    pushIfImage(out, r.media);
-    for (const m of r.mediaGallery ?? []) pushIfImage(out, m);
-  }
-
-  const uniq = new Map<string, MediaItem>();
-  for (const m of out) uniq.set(m.path, m);
-  return [...uniq.values()];
 }
 
 /**
@@ -220,13 +202,28 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
 
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [erroredTiles, setErroredTiles] = useState<Set<string>>(new Set());
+  const [media, setMedia] = useState<MediaItem[]>([]);
 
-  const media = useMemo(() => {
-    const refs = getAllReferences();
-    const withMedia = refs.filter(
-      (r) => Boolean(r.media) || Boolean(r.mediaGallery?.length)
-    );
-    return pickImageMediasFromRefs(withMedia);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !AMBIENT_SRC) return;
+    audio.volume = 0.35;
+    audio.play().then(() => setAudioPlaying(true)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/bunny/list?folder=images")
+      .then((r) => r.json())
+      .then((d: { files: string[] }) => {
+        const items: MediaItem[] = (d.files ?? [])
+          .filter((f) => /\.(png|jpe?g|webp|gif|svg|avif)$/i.test(f))
+          .map((f) => ({ type: "image" as const, path: `images/${f}` }));
+        setMedia(items);
+      })
+      .catch(() => setMedia([]));
   }, []);
 
   const [tiles, setTiles] = useState<Tile[]>([]);
@@ -238,8 +235,6 @@ export default function HomePage() {
 
   const didInitViewRef = useRef(false);
   const defaultViewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
-
-  const mediaCount = media.length;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -419,8 +414,22 @@ export default function HomePage() {
     setView(defaultViewRef.current);
   }
 
+  function toggleAudio() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play().then(() => setAudioPlaying(true)).catch(() => {});
+    } else {
+      audio.pause();
+      setAudioPlaying(false);
+    }
+  }
+
   return (
     <main className="w-full">
+      {AMBIENT_SRC && (
+        <audio ref={audioRef} src={AMBIENT_SRC} loop preload="none" />
+      )}
       <section className="px-6 pt-10 pb-6 max-w-[1400px]">
         <div className="mono text-[11px] tracking-[0.22em] uppercase opacity-60">
           ELY &amp; MARION COLLECTIVE
@@ -432,7 +441,7 @@ export default function HomePage() {
 
         <div className="mt-4 flex flex-col gap-2 md:flex-row md:items-start md:gap-10">
           <div className="mono text-[12px] opacity-60">
-            media: {mediaCount} images
+            media: {media.length - erroredTiles.size} images
           </div>
 
           <div className="mono text-[12px] opacity-50 leading-relaxed max-w-[900px]">
@@ -460,6 +469,7 @@ export default function HomePage() {
             }}
           >
             {tiles.map((t, idx) => {
+              if (erroredTiles.has(t.id)) return null;
               const url = buildPublicUrl(t.media.path);
               const isPriority = idx < 10;
 
@@ -488,6 +498,9 @@ export default function HomePage() {
                     decoding="async"
                     fetchPriority={isPriority ? "high" : "auto"}
                     className="w-full h-full object-cover bg-black/[0.03]"
+                    onError={() =>
+                      setErroredTiles((prev) => new Set([...prev, t.id]))
+                    }
                   />
 
                   <div
@@ -516,6 +529,20 @@ export default function HomePage() {
           >
             Reset view
           </button>
+
+          {AMBIENT_SRC && (
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleAudio();
+              }}
+              className="absolute left-8 bottom-8 z-50 mono text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-5 py-3 hover:bg-black/5 transition-colors"
+            >
+              {audioPlaying ? "◼ son" : "▶ son"}
+            </button>
+          )}
         </div>
       </section>
     </main>
