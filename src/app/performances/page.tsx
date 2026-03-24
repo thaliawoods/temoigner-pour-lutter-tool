@@ -1,121 +1,52 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
-const FOLDER = "performances";
+const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
 
-// ✅ seules ces vidéos seront affichées (sans extension)
-const ALLOWED_PERFORMANCE_VIDEOS = new Set([
-  "Video 29-10-2025 12 54 13",
-  "Video 25-11-2025 18 26 24",
-  "Video 25-10-2023 16 51 39",
-  "Video 23-07-2025 16 33 39",
-  "Video 21-07-2025 17 25 01",
-  "Video 21-07-2025 17 23 15",
-  "Video 13-03-2025 21 03 23",
-  "Video 13-03-2025 20 51 39",
-  "Video 03-05-2025 20 46 55",
-  "Video 03-05-2025 20 34 53",
-  "Video 03-05-2025 20 24 07",
-  "Video 03-05-2025 20 18 03",
-]);
-
-type Performance = {
-  id: string;
+type StreamVideo = {
+  guid: string;
   title: string;
-  year?: number;
-  location?: string;
-  credits?: string;
-  videoSrc?: string | null;
-  path: string;
+  thumbnailFileName: string;
+  length: number;
 };
 
-function buildPublicUrl(path: string): string {
-  if (!CDN_URL) return "";
-  const encoded = path
-    .split("/")
-    .map((p) => encodeURIComponent(p))
-    .join("/");
-  return `${CDN_URL}/${encoded}`;
+function streamPlayUrl(guid: string) {
+  return `${STREAM_CDN}/${guid}/play_720p.mp4`;
 }
 
-function isVideoName(name: string): boolean {
-  return /\.(mp4|webm|mov|m4v)$/i.test(name);
+function streamPosterUrl(guid: string, thumbnailFileName: string) {
+  return `${STREAM_CDN}/${guid}/${thumbnailFileName}`;
 }
 
-function stripExtension(name: string): string {
-  return name.replace(/\.[a-z0-9]+$/i, "");
+function stripExtension(s: string) {
+  return s.replace(/\.[a-z0-9]+$/i, "");
 }
 
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/\.[a-z0-9]+$/i, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function parseYearFromFilename(filename: string): number | undefined {
-  const m = filename.match(/(\d{2})-(\d{2})-(\d{4})/);
-  if (!m) return undefined;
-  const year = Number(m[3]);
-  return Number.isFinite(year) ? year : undefined;
-}
-
-function metaLine(p: Performance) {
-  const parts: string[] = [];
-  if (p.year) parts.push(String(p.year));
-  if (p.location && p.location !== "—") parts.push(p.location);
-  if (p.credits) parts.push(p.credits);
-  return parts.length ? parts.join(" - ") : "—";
+function formatDuration(seconds: number) {
+  if (!seconds) return "";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export default function PerformancesPage() {
   const [loading, setLoading] = useState(true);
-  const [performances, setPerformances] = useState<Performance[]>([]);
+  const [videos, setVideos] = useState<StreamVideo[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       setLoading(true);
-
       try {
-        const res = await fetch(`/api/bunny/list?folder=${FOLDER}`);
-        if (!res.ok) throw new Error("list failed");
-
-        const data: { files: string[] } = await res.json();
-
+        const res = await fetch("/api/bunny/stream");
+        if (!res.ok) throw new Error("stream fetch failed");
+        const data: { videos: StreamVideo[] } = await res.json();
         if (cancelled) return;
-
-        const files = (data.files ?? [])
-          .filter((name) => isVideoName(name))
-          .filter((name) => ALLOWED_PERFORMANCE_VIDEOS.has(stripExtension(name)));
-
-        const items: Performance[] = files.map((name) => {
-          const path = `${FOLDER}/${name}`;
-          const url = buildPublicUrl(path);
-          const year = parseYearFromFilename(name);
-          const title = stripExtension(name);
-
-          return {
-            id: slugify(name),
-            title,
-            year,
-            location: undefined,
-            credits: "Ely & Marion Collective",
-            videoSrc: url,
-            path,
-          };
-        });
-
-        console.log("[BUNNY] performances videos", items.length);
-
-        setPerformances(items);
+        setVideos(data.videos ?? []);
       } catch (e) {
-        console.error("[BUNNY] list error", e);
+        console.error("[performances] stream error", e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -136,51 +67,45 @@ export default function PerformancesPage() {
         <h1 className="mt-2 text-3xl font-medium">extraits</h1>
 
         <div className="mt-4 mono text-[12px] opacity-60">
-          {loading ? "loading…" : `videos: ${performances.length}`}
+          {loading ? "loading…" : `videos: ${videos.length}`}
         </div>
 
         <div className="mt-10 space-y-12">
-          {!loading && performances.length === 0 && (
+          {!loading && videos.length === 0 && (
             <div className="border border-zinc-200 bg-zinc-50 p-6">
               <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                no media found
-              </div>
-              <div className="mt-2 text-sm text-zinc-700">
-                Rien trouvé dans{" "}
-                <span className="mono">{FOLDER}/</span>
+                no videos found
               </div>
             </div>
           )}
 
-          {performances.map((p) => (
-            <article key={p.id} className="border border-zinc-200 bg-white">
+          {videos.map((v) => (
+            <article key={v.guid} className="border border-zinc-200 bg-white">
               <div className="w-full bg-zinc-50 border-b border-zinc-200">
-                {p.videoSrc ? (
-                  <video
-                    src={p.videoSrc}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    className="h-auto w-full"
-                    onError={() =>
-                      console.warn("[VIDEO] error:", p.path, p.videoSrc)
-                    }
-                  />
-                ) : (
-                  <div className="aspect-video w-full flex items-center justify-center">
-                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                      video placeholder
-                    </div>
-                  </div>
-                )}
+                <video
+                  src={streamPlayUrl(v.guid)}
+                  poster={streamPosterUrl(v.guid, v.thumbnailFileName)}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="h-auto w-full"
+                  onError={(e) => {
+                    const article = (e.currentTarget as HTMLElement).closest("article");
+                    if (article) (article as HTMLElement).style.display = "none";
+                  }}
+                />
               </div>
 
               <div className="p-5 sm:p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-                  <h2 className="text-xl font-medium leading-snug">{p.title}</h2>
-                  <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    {metaLine(p)}
-                  </div>
+                  <h2 className="text-xl font-medium leading-snug">
+                    {stripExtension(v.title)}
+                  </h2>
+                  {v.length > 0 && (
+                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+                      {formatDuration(v.length)}
+                    </div>
+                  )}
                 </div>
               </div>
             </article>

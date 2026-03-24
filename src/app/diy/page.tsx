@@ -1,15 +1,25 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import { getAllReferences } from "@/lib/references";
-import type { TPLMedia, TPLReference } from "@/lib/schema";
+const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
+const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
 
-type PoolKind = "image" | "video" | "text";
+type MediaKind = "image" | "video" | "audio";
+
+type MediaFile = {
+  id: string;
+  path: string;
+  url: string;
+  kind: MediaKind;
+  name: string;
+};
+
+type PoolKind = "image" | "video";
 
 type PoolTile = {
   id: string;
-  refId: string;
+  fileId: string;
   kind: PoolKind;
   x: number;
   y: number;
@@ -19,8 +29,8 @@ type PoolTile = {
 
 type CanvasItem = {
   id: string;
-  refId: string;
-  kind: "image" | "video" | "audio" | "text";
+  fileId: string;
+  kind: MediaKind;
   x: number;
   y: number;
   w: number;
@@ -35,12 +45,45 @@ function encodePath(path: string) {
 }
 
 function buildPublicUrl(path: string) {
-  const base = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
-  if (!base) return "";
-  const normalized = path
-    .replace(/^image\//, "images/")
-    .replace(/^performance\//, "performances/");
-  return `${base}/${encodePath(normalized)}`;
+  if (!CDN_URL) return "";
+  return `${CDN_URL}/${encodePath(path)}`;
+}
+
+function stripExtension(s: string) {
+  return s.replace(/\.[a-z0-9]+$/i, "");
+}
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+type StreamVideo = { guid: string; title: string; thumbnailFileName: string };
+
+function streamToMediaFile(v: StreamVideo): MediaFile {
+  return {
+    id: `stream-${v.guid}`,
+    path: `stream/${v.guid}`,
+    url: `${STREAM_CDN}/${v.guid}/play_720p.mp4`,
+    kind: "video",
+    name: stripExtension(v.title),
+  };
+}
+
+function toMediaFile(folder: string, kind: MediaKind) {
+  return (name: string): MediaFile => {
+    const path = `${folder}/${name}`;
+    return {
+      id: path,
+      path,
+      url: buildPublicUrl(path),
+      kind,
+      name: stripExtension(name),
+    };
+  };
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -56,48 +99,21 @@ function mulberry32(seed: number) {
   };
 }
 
-function prettyType(t: string) {
-  return t.replaceAll("_", " ").toUpperCase();
-}
-
 function trunc(s: string, n = 34) {
   const t = (s ?? "").trim();
   if (!t) return "—";
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
-function kindFromMedia(m?: TPLMedia | null): PoolKind {
-  if (!m) return "text";
-  if (m.kind === "image") return "image";
-  if (m.kind === "video") return "video";
-  return "text";
-}
-
-function canvasKindFromMedia(m?: TPLMedia | null): CanvasItem["kind"] {
-  if (!m) return "text";
-  if (m.kind === "image") return "image";
-  if (m.kind === "video") return "video";
-  if (m.kind === "audio") return "audio";
-  return "text";
-}
-
-function mediaUrlFromMedia(m?: TPLMedia | null): string | null {
-  if (!m) return null;
-  const src = m.src ?? "";
-  if (!src) return null;
-  if (src.startsWith("http://") || src.startsWith("https://")) return src;
-  return buildPublicUrl(src);
-}
-
 function makeScatterTiles(params: {
   seed: number;
-  refs: TPLReference[];
+  files: MediaFile[];
   count: number;
   stageW: number;
   stageH: number;
   avoidRects: Array<{ x: number; y: number; w: number; h: number }>;
 }) {
-  const { seed, refs, count, stageW, stageH, avoidRects } = params;
+  const { seed, files, count, stageW, stageH, avoidRects } = params;
   const rand = mulberry32(seed);
 
   const tiles: PoolTile[] = [];
@@ -135,9 +151,9 @@ function makeScatterTiles(params: {
   let tries = 0;
   const maxTries = 4000;
 
-  for (let i = 0; i < Math.min(count, refs.length); i++) {
-    const r = refs[i];
-    const kind = kindFromMedia(r.media);
+  for (let i = 0; i < Math.min(count, files.length); i++) {
+    const f = files[i];
+    const kind: PoolKind = f.kind === "video" ? "video" : "image";
 
     const w = Math.round(minW + rand() * (maxW - minW));
     const h = Math.round(minH + rand() * (maxH - minH));
@@ -154,8 +170,8 @@ function makeScatterTiles(params: {
       if (!isOk(rect)) continue;
 
       tiles.push({
-        id: `pool-${r.id}`,
-        refId: r.id,
+        id: `pool-${f.id}`,
+        fileId: f.id,
         kind,
         x,
         y,
@@ -205,58 +221,51 @@ function WaveMini({ seed = 1 }: { seed?: number }) {
 }
 
 function PoolCard({
-  r,
+  f,
   style,
   onPointerDown,
 }: {
-  r: TPLReference;
+  f: MediaFile;
   style: React.CSSProperties;
   onPointerDown: (e: React.PointerEvent) => void;
 }) {
-  const kind = kindFromMedia(r.media);
-  const url = mediaUrlFromMedia(r.media);
-
   return (
     <div
       className="absolute bg-white border border-zinc-200 select-none overflow-hidden"
       style={style}
       onPointerDown={onPointerDown}
     >
-      {url && (kind === "image" || kind === "video") ? (
-        <div className="absolute inset-0">
-          {kind === "video" ? (
-            <video
-              src={url}
-              muted
-              playsInline
-              preload="metadata"
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <img
-              src={url}
-              alt=""
-              draggable={false}
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          )}
-          <div className="absolute inset-0 bg-white/35" />
-        </div>
-      ) : null}
+      <div className="absolute inset-0">
+        {f.kind === "video" ? (
+          <video
+            src={f.url}
+            muted
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+          />
+        ) : (
+          <img
+            src={f.url}
+            alt=""
+            draggable={false}
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+          />
+        )}
+        <div className="absolute inset-0 bg-white/35" />
+      </div>
 
       <div className="relative p-3">
         <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-          {kind === "image"
-            ? "IMAGE"
-            : kind === "video"
-            ? "VIDEO"
-            : prettyType(r.type)}
+          {f.kind.toUpperCase()}
         </div>
 
         <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-          {trunc(r.title, 40)}
+          {trunc(f.name, 40)}
         </div>
 
         <div className="mt-2 mono text-[10px] uppercase tracking-widest text-zinc-500">
@@ -268,24 +277,21 @@ function PoolCard({
 }
 
 function CanvasBlock({
-  r,
+  f,
   selected,
   style,
   onPointerDown,
   onPointerMove,
   onPointerUp,
 }: {
-  r: TPLReference;
+  f: MediaFile;
   selected: boolean;
   style: React.CSSProperties;
   onPointerDown: (e: React.PointerEvent) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent) => void;
 }) {
-  const kind = canvasKindFromMedia(r.media);
-  const url = mediaUrlFromMedia(r.media);
-
-  if (kind === "audio") {
+  if (f.kind === "audio") {
     return (
       <div
         className={[
@@ -305,19 +311,19 @@ function CanvasBlock({
                 AUDIO
               </div>
               <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-                {trunc(r.title, 48)}
+                {trunc(f.name, 48)}
               </div>
             </div>
-            <WaveMini seed={r.id.length * 33} />
+            <WaveMini seed={f.id.length * 33} />
           </div>
 
-          {url ? (
-            <audio controls preload="none" src={url} className="w-full" />
-          ) : (
-            <div className="mono text-[10px] uppercase tracking-widest text-zinc-400">
-              no audio
-            </div>
-          )}
+          <audio
+            controls
+            preload="none"
+            src={f.url}
+            className="w-full"
+            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+          />
         </div>
       </div>
     );
@@ -335,39 +341,35 @@ function CanvasBlock({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      {url && (kind === "image" || kind === "video") ? (
-        <div className="absolute inset-0">
-          {kind === "video" ? (
-            <video
-              src={url}
-              controls
-              playsInline
-              preload="metadata"
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <img
-              src={url}
-              alt=""
-              draggable={false}
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          )}
-        </div>
-      ) : null}
+      <div className="absolute inset-0">
+        {f.kind === "video" ? (
+          <video
+            src={f.url}
+            controls
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+          />
+        ) : (
+          <img
+            src={f.url}
+            alt=""
+            draggable={false}
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+          />
+        )}
+      </div>
 
       <div className="absolute inset-x-0 bottom-0 p-3 bg-white/70 backdrop-blur-[2px]">
         <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-          {kind === "image"
-            ? "IMAGE"
-            : kind === "video"
-            ? "VIDEO"
-            : prettyType(r.type)}
+          {f.kind.toUpperCase()}
         </div>
         <div className="mt-1 text-[12px] leading-snug text-zinc-900">
-          {trunc(r.title, 44)}
+          {trunc(f.name, 44)}
         </div>
       </div>
     </div>
@@ -375,27 +377,54 @@ function CanvasBlock({
 }
 
 export default function DIYPage() {
-  const baseRefs = useMemo(() => getAllReferences(), []);
+  const [visualFiles, setVisualFiles] = useState<MediaFile[]>([]);
+  const [audioFiles, setAudioFiles] = useState<MediaFile[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const refs = useMemo(() => {
-    return baseRefs.filter((r) => Boolean(r.media));
-  }, [baseRefs]);
+  useEffect(() => {
+    let cancelled = false;
 
-  const loadingMedia = false;
+    async function run() {
+      setLoading(true);
+      try {
+        const [imgData, streamData, audData] = await Promise.all([
+          fetch("/api/bunny/list?folder=images").then((r) => r.json()),
+          fetch("/api/bunny/stream").then((r) => r.json()),
+          fetch("/api/bunny/list?folder=audio").then((r) => r.json()),
+        ]);
 
-  const refsById = useMemo(() => {
-    const m = new Map<string, TPLReference>();
-    for (const r of refs) m.set(r.id, r);
+        if (cancelled) return;
+
+        const images: MediaFile[] = (imgData.files ?? [])
+          .filter((f: string) => /\.(png|jpe?g|webp|gif|svg|avif)$/i.test(f))
+          .map(toMediaFile("images", "image"));
+
+        const videos: MediaFile[] = (streamData.videos ?? []).map(streamToMediaFile);
+
+        const audios: MediaFile[] = (audData.files ?? [])
+          .filter((f: string) => /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(f))
+          .map(toMediaFile("audio", "audio"));
+
+        setVisualFiles([...images, ...videos]);
+        setAudioFiles(audios);
+      } catch (e) {
+        console.error("[DIY] fetch error", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filesById = useMemo(() => {
+    const m = new Map<string, MediaFile>();
+    for (const f of [...visualFiles, ...audioFiles]) m.set(f.id, f);
     return m;
-  }, [refs]);
-
-  const visualRefs = useMemo(() => {
-    return refs.filter((r) => r.media?.kind === "image" || r.media?.kind === "video");
-  }, [refs]);
-
-  const audioRefs = useMemo(() => {
-    return refs.filter((r) => r.media?.kind === "audio");
-  }, [refs]);
+  }, [visualFiles, audioFiles]);
 
   const [poolSeed, setPoolSeed] = useState(1);
 
@@ -403,9 +432,7 @@ export default function DIYPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
-
   const canvasCaptureRef = useRef<HTMLDivElement | null>(null);
-
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
 
   React.useEffect(() => {
@@ -426,11 +453,11 @@ export default function DIYPage() {
     return getCanvasRectInStage({ stageW: stageSize.w || 1200, topOffset });
   }, [stageSize.w]);
 
-  const poolRefs = useMemo(() => {
+  const poolFiles = useMemo(() => {
     const rand = mulberry32(poolSeed * 999);
-    const shuffled = [...visualRefs].sort(() => rand() - 0.5);
+    const shuffled = [...visualFiles].sort(() => rand() - 0.5);
     return shuffled.slice(0, 26);
-  }, [visualRefs, poolSeed]);
+  }, [visualFiles, poolSeed]);
 
   const poolTiles = useMemo(() => {
     const stageW = stageSize.w || 1200;
@@ -454,33 +481,33 @@ export default function DIYPage() {
 
     return makeScatterTiles({
       seed: poolSeed * 1337,
-      refs: poolRefs,
+      files: poolFiles,
       count: 26,
       stageW,
       stageH,
       avoidRects: avoid,
     });
-  }, [poolRefs, poolSeed, rects.canvas, rects.console, stageSize.w, stageSize.h]);
+  }, [poolFiles, poolSeed, rects.canvas, rects.console, stageSize.w, stageSize.h]);
 
   const tileData = useMemo(() => {
     return poolTiles
       .map((t) => {
-        const r = refsById.get(t.refId);
-        if (!r) return null;
-        return { tile: t, ref: r };
+        const f = filesById.get(t.fileId);
+        if (!f) return null;
+        return { tile: t, file: f };
       })
-      .filter((x): x is { tile: PoolTile; ref: TPLReference } => Boolean(x));
-  }, [poolTiles, refsById]);
+      .filter((x): x is { tile: PoolTile; file: MediaFile } => Boolean(x));
+  }, [poolTiles, filesById]);
 
   const audioList = useMemo(() => {
     const rand = mulberry32(poolSeed * 2027);
-    const shuffled = [...audioRefs].sort(() => rand() - 0.5);
+    const shuffled = [...audioFiles].sort(() => rand() - 0.5);
     return shuffled;
-  }, [audioRefs, poolSeed]);
+  }, [audioFiles, poolSeed]);
 
   const dragRef = useRef<{
-    refId: string;
-    kind: CanvasItem["kind"];
+    fileId: string;
+    kind: MediaKind;
     offsetX: number;
     offsetY: number;
     w: number;
@@ -493,8 +520,8 @@ export default function DIYPage() {
     y: number;
     w: number;
     h: number;
-    refId: string;
-    kind: CanvasItem["kind"];
+    fileId: string;
+    kind: MediaKind;
   } | null>(null);
 
   const beginDragVisual = (e: React.PointerEvent, tile: PoolTile) => {
@@ -509,7 +536,7 @@ export default function DIYPage() {
     const y = e.clientY - stageR.top;
 
     dragRef.current = {
-      refId: tile.refId,
+      fileId: tile.fileId,
       kind: tile.kind,
       offsetX: 12,
       offsetY: 12,
@@ -523,14 +550,14 @@ export default function DIYPage() {
       y: y + 12,
       w: tile.w,
       h: tile.h,
-      refId: tile.refId,
+      fileId: tile.fileId,
       kind: tile.kind,
     });
 
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
   };
 
-  const beginDragAudio = (e: React.PointerEvent, refId: string) => {
+  const beginDragAudio = (e: React.PointerEvent, fileId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -545,7 +572,7 @@ export default function DIYPage() {
     const h = 120;
 
     dragRef.current = {
-      refId,
+      fileId,
       kind: "audio",
       offsetX: 12,
       offsetY: 12,
@@ -559,7 +586,7 @@ export default function DIYPage() {
       y: y + 12,
       w,
       h,
-      refId,
+      fileId,
       kind: "audio",
     });
 
@@ -615,7 +642,7 @@ export default function DIYPage() {
           ...prev,
           {
             id,
-            refId: d.refId,
+            fileId: d.fileId,
             kind: d.kind,
             x: clamp(localX - w / 2, 10, c.w - w - 10),
             y: clamp(localY - h / 2, 10, c.h - h - 10),
@@ -865,9 +892,9 @@ export default function DIYPage() {
               </h1>
 
               <div className="mt-2 mono text-[11px] uppercase tracking-widest text-zinc-400">
-                {loadingMedia
+                {loading
                   ? "loading media…"
-                  : `${visualRefs.length} visuals · ${audioRefs.length} audio`}
+                  : `${visualFiles.length} visuals · ${audioFiles.length} audio`}
               </div>
             </div>
 
@@ -923,7 +950,7 @@ export default function DIYPage() {
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
             >
-              {tileData.map(({ tile, ref }) => {
+              {tileData.map(({ tile, file }) => {
                 const style: React.CSSProperties = {
                   left: tile.x,
                   top: tile.y,
@@ -934,7 +961,7 @@ export default function DIYPage() {
                 return (
                   <PoolCard
                     key={tile.id}
-                    r={ref}
+                    f={file}
                     style={style}
                     onPointerDown={(e) => beginDragVisual(e, tile)}
                   />
@@ -951,7 +978,7 @@ export default function DIYPage() {
                   background: "#fff",
                 }}
               >
-                {/* ✅ CANVAS (capturé pour export) */}
+                {/* canvas (captured for export) */}
                 <div
                   ref={canvasCaptureRef}
                   className="absolute border border-zinc-200 bg-white"
@@ -974,13 +1001,13 @@ export default function DIYPage() {
 
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                      drag refs here
+                      drag media here
                     </div>
                   </div>
 
                   {items.map((it) => {
-                    const r = refsById.get(it.refId);
-                    if (!r) return null;
+                    const f = filesById.get(it.fileId);
+                    if (!f) return null;
 
                     return (
                       <div
@@ -1003,7 +1030,7 @@ export default function DIYPage() {
                         onPointerCancel={onBlockUp}
                       >
                         <CanvasBlock
-                          r={r}
+                          f={f}
                           selected={selectedId === it.id}
                           style={{ left: 0, top: 0, width: it.w, height: it.h }}
                           onPointerDown={() => {}}
@@ -1011,7 +1038,6 @@ export default function DIYPage() {
                           onPointerUp={() => {}}
                         />
 
-                        {/* ✅ resize handle */}
                         {selectedId === it.id ? (
                           <div
                             className="absolute right-1 bottom-1 h-3 w-3 border border-black bg-white cursor-se-resize"
@@ -1027,7 +1053,7 @@ export default function DIYPage() {
                   })}
                 </div>
 
-                {/* CONSOLE (non capturée) */}
+                {/* audio console (not captured) */}
                 <div
                   className="absolute border border-zinc-200 bg-white"
                   style={{
@@ -1051,47 +1077,47 @@ export default function DIYPage() {
 
                     <div className="flex-1 overflow-auto border border-zinc-200">
                       <div className="divide-y divide-zinc-200">
-                        {audioList.map((r) => {
-                          const src = mediaUrlFromMedia(r.media);
-                          return (
-                            <div
-                              key={r.id}
-                              className="flex items-center justify-between gap-4 px-3 py-2 hover:bg-zinc-50"
+                        {audioList.map((f) => (
+                          <div
+                            key={f.id}
+                            className="flex items-center justify-between gap-4 px-3 py-2 hover:bg-zinc-50"
+                          >
+                            <button
+                              type="button"
+                              className="min-w-0 text-left"
+                              onPointerDown={(e) => beginDragAudio(e, f.id)}
                             >
-                              <button
-                                type="button"
-                                className="min-w-0 text-left"
-                                onPointerDown={(e) => beginDragAudio(e, r.id)}
-                              >
-                                <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
-                                  {prettyType(r.type)}
-                                </div>
-                                <div className="mt-1 text-[12px] text-zinc-900 truncate">
-                                  {r.title}
-                                </div>
-                                <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
-                                  drag to canvas
-                                </div>
-                              </button>
-
-                              <div className="flex items-center gap-3">
-                                <WaveMini seed={r.id.length * 17} />
-                                {src ? (
-                                  <audio
-                                    controls
-                                    preload="none"
-                                    src={src}
-                                    className="w-[260px]"
-                                  />
-                                ) : (
-                                  <div className="mono text-[10px] uppercase tracking-widest text-zinc-400">
-                                    no audio
-                                  </div>
-                                )}
+                              <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
+                                AUDIO
                               </div>
+                              <div className="mt-1 text-[12px] text-zinc-900 truncate">
+                                {f.name}
+                              </div>
+                              <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
+                                drag to canvas
+                              </div>
+                            </button>
+
+                            <div className="flex items-center gap-3">
+                              <WaveMini seed={f.id.length * 17} />
+                              <audio
+                                controls
+                                preload="none"
+                                src={f.url}
+                                className="w-[260px]"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                }}
+                              />
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
+
+                        {!loading && audioList.length === 0 ? (
+                          <div className="p-3 mono text-[11px] uppercase tracking-widest text-zinc-400">
+                            no audio found
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -1114,7 +1140,7 @@ export default function DIYPage() {
                         {ghost.kind.toUpperCase()}
                       </div>
                       <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-                        {trunc(refsById.get(ghost.refId)?.title ?? "—", 48)}
+                        {trunc(filesById.get(ghost.fileId)?.name ?? "—", 48)}
                       </div>
                     </div>
                     {ghost.kind === "audio" ? <WaveMini seed={77} /> : null}

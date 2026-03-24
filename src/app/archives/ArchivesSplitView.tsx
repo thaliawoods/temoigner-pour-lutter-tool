@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { TPLMedia, TPLReference } from "@/lib/schema";
 import { getAllReferences } from "@/lib/references";
 import { buildPublicUrl, guessMediaForReference, listBucketMedia } from "@/lib/media";
@@ -31,17 +31,21 @@ function MediaHero({ r }: { r: TPLReference }) {
 
   const url = buildPublicUrl(media.src);
 
+  const hide = (e: React.SyntheticEvent) => {
+    (e.currentTarget as HTMLElement).style.display = "none";
+  };
+
   if (media.kind === "image") {
-    return <img src={url} alt={media.alt ?? r.title} className="h-full w-full object-cover" />;
+    return <img src={url} alt={media.alt ?? r.title} className="h-full w-full object-cover" onError={hide} />;
   }
 
   if (media.kind === "video") {
-    return <video src={url} className="h-full w-full object-cover" muted playsInline controls preload="metadata" poster={media.poster} />;
+    return <video src={url} className="h-full w-full object-cover" muted playsInline controls preload="metadata" poster={media.poster} onError={hide} />;
   }
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-zinc-50">
-      <audio src={url} controls preload="metadata" className="w-[92%]" />
+      <audio src={url} controls preload="metadata" className="w-[92%]" onError={hide} />
     </div>
   );
 }
