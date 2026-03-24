@@ -118,28 +118,14 @@ function formatYear(ref: TPLReference): string {
   return "—";
 }
 
-function MediaDisplay({ item }: { item: RefItem }) {
-  const [errored, setErrored] = useState(false);
-
-  if (errored) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-zinc-50">
-        <div className="mono text-[11px] uppercase tracking-widest text-zinc-400">
-          média non disponible
-        </div>
-      </div>
-    );
-  }
-
-  const hide = () => setErrored(true);
-
+function MediaDisplay({ item, onError }: { item: RefItem; onError: () => void }) {
   if (item.kind === "image") {
     return (
       <img
         src={item.url}
         alt={item.ref.title}
         className="h-full w-full object-contain"
-        onError={hide}
+        onError={onError}
       />
     );
   }
@@ -154,7 +140,7 @@ function MediaDisplay({ item }: { item: RefItem }) {
         playsInline
         controls
         preload="metadata"
-        onError={hide}
+        onError={onError}
       />
     );
   }
@@ -166,7 +152,7 @@ function MediaDisplay({ item }: { item: RefItem }) {
         controls
         preload="metadata"
         className="w-[92%]"
-        onError={hide}
+        onError={onError}
       />
     </div>
   );
@@ -218,29 +204,45 @@ export default function ArchivesReader() {
     });
   }, [allItems, query]);
 
+  const [erroredIds, setErroredIds] = useState<Set<string>>(new Set());
+
+  const markErrored = useCallback((id: string) => {
+    setErroredIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const displayedItems = useMemo(
+    () => filtered.filter((item) => !erroredIds.has(item.id)),
+    [filtered, erroredIds]
+  );
+
   const [selectedId, setSelectedId] = useState<string>("");
 
   useEffect(() => {
-    if (!selectedId && filtered.length > 0) {
-      setSelectedId(filtered[0].id);
+    const valid = displayedItems.some((f) => f.id === selectedId);
+    if (!valid && displayedItems.length > 0) {
+      setSelectedId(displayedItems[0].id);
     }
-  }, [filtered, selectedId]);
+  }, [displayedItems, selectedId]);
 
   const selected = useMemo(
-    () => filtered.find((f) => f.id === selectedId) ?? filtered[0] ?? null,
-    [filtered, selectedId]
+    () => displayedItems.find((f) => f.id === selectedId) ?? displayedItems[0] ?? null,
+    [displayedItems, selectedId]
   );
 
   const selectByOffset = useCallback(
     (delta: number) => {
-      if (!filtered.length || !selected) return;
-      const idx = filtered.findIndex((f) => f.id === selected.id);
+      if (!displayedItems.length || !selected) return;
+      const idx = displayedItems.findIndex((f) => f.id === selected.id);
       const cur = idx >= 0 ? idx : 0;
-      const next = Math.max(0, Math.min(filtered.length - 1, cur + delta));
-      const nextId = filtered[next]?.id;
+      const next = Math.max(0, Math.min(displayedItems.length - 1, cur + delta));
+      const nextId = displayedItems[next]?.id;
       if (nextId) setSelectedId(nextId);
     },
-    [filtered, selected]
+    [displayedItems, selected]
   );
 
   useEffect(() => {
@@ -282,12 +284,12 @@ export default function ArchivesReader() {
                 className="w-full border border-zinc-300 px-3 py-2 text-sm bg-white"
               />
               <div className="mt-2 mono text-[11px] uppercase tracking-widest text-zinc-600">
-                {filtered.length} références
+                {displayedItems.length} références
               </div>
             </div>
 
             <div className="max-h-[calc(100vh-260px)] overflow-auto">
-              {filtered.map((item) => {
+              {displayedItems.map((item) => {
                 const active = item.id === selected?.id;
                 return (
                   <button
@@ -319,7 +321,7 @@ export default function ArchivesReader() {
                 );
               })}
 
-              {filtered.length === 0 ? (
+              {displayedItems.length === 0 ? (
                 <div className="p-4 text-sm text-zinc-500">aucun résultat</div>
               ) : null}
             </div>
@@ -328,7 +330,13 @@ export default function ArchivesReader() {
           {/* media */}
           <section className="border-b lg:border-b-0 lg:border-r border-zinc-200 bg-white">
             <div className="h-[520px] w-full bg-zinc-100">
-              {selected ? <MediaDisplay key={selected.id} item={selected} /> : null}
+              {selected ? (
+                <MediaDisplay
+                  key={selected.id}
+                  item={selected}
+                  onError={() => markErrored(selected.id)}
+                />
+              ) : null}
             </div>
           </section>
 
