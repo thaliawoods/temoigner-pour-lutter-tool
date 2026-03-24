@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { getAllReferences } from "@/lib/references";
-import type { TPLReference } from "@/lib/schema";
+import { useEffect, useState } from "react";
 
 const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
 
@@ -12,8 +10,6 @@ type StreamVideo = {
   thumbnailFileName: string;
   length: number;
 };
-
-type EnrichedVideo = StreamVideo & { ref?: TPLReference };
 
 function stripExtension(s: string) {
   return s.replace(/\.[a-z0-9]+$/i, "");
@@ -26,47 +22,9 @@ function formatDuration(seconds: number) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function normKey(s: string): string {
-  return s
-    .replace(/\.[a-z0-9]+$/i, "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function basename(src: string): string {
-  return src.split("/").pop() ?? src;
-}
-
-function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
-  const map = new Map<string, TPLReference>();
-  for (const ref of refs) {
-    const srcs: string[] = [];
-    const m = ref.media as unknown;
-    if (Array.isArray(m)) {
-      for (const item of m as { src?: string }[]) if (item?.src) srcs.push(item.src);
-    } else if (m && typeof m === "object" && (m as { src?: string }).src) {
-      srcs.push((m as { src: string }).src);
-    }
-    if (ref.mediaGallery) {
-      for (const item of ref.mediaGallery) if (item?.src) srcs.push(item.src);
-    }
-    for (const src of srcs) {
-      const key = normKey(basename(src));
-      if (key && !map.has(key)) map.set(key, ref);
-    }
-  }
-  return map;
-}
-
 export default function PerformancesPage() {
-  const allRefs = useMemo(() => getAllReferences(), []);
-  const refLookup = useMemo(() => buildRefLookup(allRefs), [allRefs]);
-
   const [loading, setLoading] = useState(true);
-  const [videos, setVideos] = useState<EnrichedVideo[]>([]);
+  const [videos, setVideos] = useState<StreamVideo[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,11 +36,7 @@ export default function PerformancesPage() {
         if (!res.ok) throw new Error("stream fetch failed");
         const data: { videos: StreamVideo[] } = await res.json();
         if (cancelled) return;
-        const enriched: EnrichedVideo[] = (data.videos ?? []).map((v) => ({
-          ...v,
-          ref: refLookup.get(normKey(v.title)),
-        }));
-        setVideos(enriched);
+        setVideos(data.videos ?? []);
       } catch (e) {
         console.error("[performances] stream error", e);
       } finally {
@@ -91,10 +45,8 @@ export default function PerformancesPage() {
     }
 
     void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [refLookup]);
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <main className="min-h-screen bg-white text-zinc-900">
@@ -131,25 +83,16 @@ export default function PerformancesPage() {
               </div>
 
               <div className="p-5 sm:p-6">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
+                <div className="flex items-baseline justify-between gap-3">
                   <h2 className="text-xl font-medium leading-snug">
-                    {v.ref?.title ?? stripExtension(v.title)}
+                    {stripExtension(v.title)}
                   </h2>
-                  <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    {v.ref?.year ? String(v.ref.year) : ""}
-                    {v.length > 0 ? (v.ref?.year ? " · " : "") + formatDuration(v.length) : ""}
-                  </div>
+                  {v.length > 0 && (
+                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-600 shrink-0">
+                      {formatDuration(v.length)}
+                    </div>
+                  )}
                 </div>
-
-                {v.ref?.creator ? (
-                  <div className="mt-1 text-sm text-zinc-600">{v.ref.creator}</div>
-                ) : null}
-
-                {v.ref?.location ? (
-                  <div className="mt-1 mono text-[11px] uppercase tracking-widest text-zinc-500">
-                    {v.ref.location}
-                  </div>
-                ) : null}
               </div>
             </article>
           ))}
