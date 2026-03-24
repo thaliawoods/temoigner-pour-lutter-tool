@@ -5,8 +5,6 @@ import React, { useMemo, useRef, useState } from "react";
 import { getAllReferences } from "@/lib/references";
 import type { TPLMedia, TPLReference } from "@/lib/schema";
 
-const BUCKET = "tpl-web";
-
 type PoolKind = "image" | "video" | "text";
 
 type PoolTile = {
@@ -37,9 +35,12 @@ function encodePath(path: string) {
 }
 
 function buildPublicUrl(path: string) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const base = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
   if (!base) return "";
-  return `${base}/storage/v1/object/public/${BUCKET}/${encodePath(path)}`;
+  const normalized = path
+    .replace(/^image\//, "images/")
+    .replace(/^performance\//, "performances/");
+  return `${base}/${encodePath(normalized)}`;
 }
 
 function clamp(n: number, min: number, max: number) {

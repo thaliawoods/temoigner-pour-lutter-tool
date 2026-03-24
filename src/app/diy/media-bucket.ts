@@ -1,11 +1,8 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabase as supabaseUntyped } from "@/lib/supabase/client";
+import type { TPLMedia, TPLReference } from "@/lib/schema";
 
-const supabase = supabaseUntyped as unknown as SupabaseClient;
+export const BUCKET = "tpl-media";
 
-export const BUCKET = "tpl-web";
-
-export type BucketKind = "image" | "video" | "audio";
+export type BucketKind = "images" | "video" | "audio";
 
 export type MediaKind = BucketKind;
 
@@ -24,9 +21,12 @@ function encodePath(path: string) {
 }
 
 export function buildPublicUrl(path: string) {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const base = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
   if (!base) return "";
-  return `${base}/storage/v1/object/public/${BUCKET}/${encodePath(path)}`;
+  const normalized = path
+    .replace(/^image\//, "images/")
+    .replace(/^performance\//, "performances/");
+  return `${base}/${encodePath(normalized)}`;
 }
 
 function normalize(s: string) {
@@ -43,33 +43,34 @@ function makeKey(nameOrPath: string) {
   return normalize(nameOrPath);
 }
 
+async function listFolder(kind: string): Promise<string[]> {
+  try {
+    const res = await fetch(`/api/bunny/list?folder=${kind}`);
+    if (!res.ok) return [];
+    const data: { files: string[] } = await res.json();
+    return data.files ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export async function listBucketMedia() {
-  const kinds: BucketKind[] = ["image", "video", "audio"];
+  const kinds: BucketKind[] = ["images", "video", "audio"];
   const results = await Promise.all(
     kinds.map(async (kind) => {
-      const res = await supabase.storage.from(BUCKET).list(kind, {
-        limit: 1000,
-        offset: 0,
-        sortBy: { column: "name", order: "asc" },
-      });
-
-      const files: BucketFile[] =
-        res.data?.map((f) => {
-          const path = `${kind}/${f.name}`;
-          return {
-            kind,
-            path,
-            name: f.name,
-            key: makeKey(f.name),
-          };
-        }) ?? [];
-
+      const names = await listFolder(kind);
+      const files: BucketFile[] = names.map((name) => ({
+        kind,
+        path: `${kind}/${name}`,
+        name,
+        key: makeKey(name),
+      }));
       return [kind, files] as const;
     })
   );
 
   const out: Record<BucketKind, BucketFile[]> = {
-    image: [],
+    images: [],
     video: [],
     audio: [],
   };
@@ -92,12 +93,12 @@ export type TPLType =
 
 export type YearRange = { start: number; end: number };
 
-export type TPLMedia =
+export type TPLMediaLocal =
   | { kind: "image"; src: string; alt?: string }
   | { kind: "video"; src: string; poster?: string }
   | { kind: "audio"; src: string; title?: string };
 
-export type TPLReference = {
+export type TPLReferenceLocal = {
   id: string;
   type: TPLType;
   title: string;
@@ -116,7 +117,7 @@ function preferredKindForType(t: TPLReference["type"]): BucketKind {
   if (t === "musique" || t === "podcast") return "audio";
   if (t === "film" || t === "video" || t === "performance" || t === "jeu_video")
     return "video";
-  return "image";
+  return "images";
 }
 
 function scoreMatch(fileKey: string, refKey: string) {
@@ -170,7 +171,7 @@ export function guessMediaForReference(
 
   const chosen = best?.score ? best.file : files[0];
 
-  if (kind === "image") return { kind: "image", src: chosen.path, alt: r.title };
+  if (kind === "images") return { kind: "image", src: chosen.path, alt: r.title };
   if (kind === "video") return { kind: "video", src: chosen.path };
   return { kind: "audio", src: chosen.path, title: r.title };
 }
