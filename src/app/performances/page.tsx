@@ -13,12 +13,11 @@ type StreamVideo = {
   length: number;
 };
 
-type PerformanceItem = {
-  ref: TPLReference;
-  guid: string;
-  thumbnailFileName: string;
-  length: number;
-};
+type EnrichedVideo = StreamVideo & { ref?: TPLReference };
+
+function stripExtension(s: string) {
+  return s.replace(/\.[a-z0-9]+$/i, "");
+}
 
 function formatDuration(seconds: number) {
   if (!seconds) return "";
@@ -41,32 +40,33 @@ function basename(src: string): string {
   return src.split("/").pop() ?? src;
 }
 
-function getVideoSrcs(ref: TPLReference): string[] {
-  const srcs: string[] = [];
-  const m = ref.media as unknown;
-  if (Array.isArray(m)) {
-    for (const item of m as { kind?: string; src?: string }[])
-      if (item?.kind === "video" && item.src) srcs.push(item.src);
-  } else if (m && typeof m === "object") {
-    const item = m as { kind?: string; src?: string };
-    if (item.kind === "video" && item.src) srcs.push(item.src);
+function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
+  const map = new Map<string, TPLReference>();
+  for (const ref of refs) {
+    const srcs: string[] = [];
+    const m = ref.media as unknown;
+    if (Array.isArray(m)) {
+      for (const item of m as { src?: string }[]) if (item?.src) srcs.push(item.src);
+    } else if (m && typeof m === "object" && (m as { src?: string }).src) {
+      srcs.push((m as { src: string }).src);
+    }
+    if (ref.mediaGallery) {
+      for (const item of ref.mediaGallery) if (item?.src) srcs.push(item.src);
+    }
+    for (const src of srcs) {
+      const key = normKey(basename(src));
+      if (key && !map.has(key)) map.set(key, ref);
+    }
   }
-  if (ref.mediaGallery) {
-    for (const item of ref.mediaGallery)
-      if (item.kind === "video" && item.src) srcs.push(item.src);
-  }
-  return srcs;
+  return map;
 }
 
 export default function PerformancesPage() {
   const allRefs = useMemo(() => getAllReferences(), []);
-  const performanceRefs = useMemo(
-    () => allRefs.filter((r) => r.type === "performance"),
-    [allRefs]
-  );
+  const refLookup = useMemo(() => buildRefLookup(allRefs), [allRefs]);
 
   const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<PerformanceItem[]>([]);
+  const [videos, setVideos] = useState<EnrichedVideo[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,21 +78,11 @@ export default function PerformancesPage() {
         if (!res.ok) throw new Error("stream fetch failed");
         const data: { videos: StreamVideo[] } = await res.json();
         if (cancelled) return;
-
-        const streamByKey = new Map<string, StreamVideo>();
-        for (const v of data.videos ?? []) streamByKey.set(normKey(v.title), v);
-
-        const matched: PerformanceItem[] = [];
-        for (const ref of performanceRefs) {
-          for (const src of getVideoSrcs(ref)) {
-            const sv = streamByKey.get(normKey(basename(src)));
-            if (sv) {
-              matched.push({ ref, guid: sv.guid, thumbnailFileName: sv.thumbnailFileName, length: sv.length ?? 0 });
-              break;
-            }
-          }
-        }
-        setItems(matched);
+        const enriched: EnrichedVideo[] = (data.videos ?? []).map((v) => ({
+          ...v,
+          ref: refLookup.get(normKey(v.title)),
+        }));
+        setVideos(enriched);
       } catch (e) {
         console.error("[performances] stream error", e);
       } finally {
@@ -104,7 +94,7 @@ export default function PerformancesPage() {
     return () => {
       cancelled = true;
     };
-  }, [performanceRefs]);
+  }, [refLookup]);
 
   return (
     <main className="min-h-screen bg-white text-zinc-900">
@@ -115,20 +105,20 @@ export default function PerformancesPage() {
         <h1 className="mt-2 text-3xl font-medium">extraits</h1>
 
         <div className="mt-10 space-y-12">
-          {!loading && items.length === 0 && (
+          {!loading && videos.length === 0 && (
             <div className="border border-zinc-200 bg-zinc-50 p-6">
               <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                aucune performance trouvée
+                aucune vidéo trouvée
               </div>
             </div>
           )}
 
-          {items.map((item) => (
-            <article key={item.guid} className="border border-zinc-200 bg-white">
+          {videos.map((v) => (
+            <article key={v.guid} className="border border-zinc-200 bg-white">
               <div className="w-full bg-zinc-50 border-b border-zinc-200">
                 <video
-                  src={`${STREAM_CDN}/${item.guid}/play_720p.mp4`}
-                  poster={`${STREAM_CDN}/${item.guid}/${item.thumbnailFileName}`}
+                  src={`${STREAM_CDN}/${v.guid}/play_720p.mp4`}
+                  poster={`${STREAM_CDN}/${v.guid}/${v.thumbnailFileName}`}
                   controls
                   playsInline
                   preload="metadata"
@@ -143,21 +133,21 @@ export default function PerformancesPage() {
               <div className="p-5 sm:p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
                   <h2 className="text-xl font-medium leading-snug">
-                    {item.ref.title}
+                    {v.ref?.title ?? stripExtension(v.title)}
                   </h2>
                   <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                    {item.ref.year ? String(item.ref.year) : ""}
-                    {item.length > 0 ? (item.ref.year ? " · " : "") + formatDuration(item.length) : ""}
+                    {v.ref?.year ? String(v.ref.year) : ""}
+                    {v.length > 0 ? (v.ref?.year ? " · " : "") + formatDuration(v.length) : ""}
                   </div>
                 </div>
 
-                {item.ref.creator ? (
-                  <div className="mt-1 text-sm text-zinc-600">{item.ref.creator}</div>
+                {v.ref?.creator ? (
+                  <div className="mt-1 text-sm text-zinc-600">{v.ref.creator}</div>
                 ) : null}
 
-                {item.ref.location ? (
+                {v.ref?.location ? (
                   <div className="mt-1 mono text-[11px] uppercase tracking-widest text-zinc-500">
-                    {item.ref.location}
+                    {v.ref.location}
                   </div>
                 ) : null}
               </div>
