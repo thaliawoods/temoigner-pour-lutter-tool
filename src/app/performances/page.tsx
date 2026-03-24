@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-const BUCKET = "tpl-web";
-const FOLDER = "performance";
+const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
+const FOLDER = "performances";
 
 // ✅ seules ces vidéos seront affichées (sans extension)
 const ALLOWED_PERFORMANCE_VIDEOS = new Set([
@@ -35,29 +32,19 @@ type Performance = {
   path: string;
 };
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __tpl_supabase__: SupabaseClient | undefined;
-}
-
-function getSupabase(): SupabaseClient | null {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-  if (!globalThis.__tpl_supabase__) {
-    globalThis.__tpl_supabase__ = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
-  return globalThis.__tpl_supabase__ ?? null;
-}
-
-function buildPublicUrl(supabase: SupabaseClient, path: string): string {
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+function buildPublicUrl(path: string): string {
+  if (!CDN_URL) return "";
+  const encoded = path
+    .split("/")
+    .map((p) => encodeURIComponent(p))
+    .join("/");
+  return `${CDN_URL}/${encoded}`;
 }
 
 function isVideoName(name: string): boolean {
   return /\.(mp4|webm|mov|m4v)$/i.test(name);
 }
 
-// enlève l’extension (pour whitelist + title)
 function stripExtension(name: string): string {
   return name.replace(/\.[a-z0-9]+$/i, "");
 }
@@ -77,7 +64,6 @@ function parseYearFromFilename(filename: string): number | undefined {
   return Number.isFinite(year) ? year : undefined;
 }
 
-// ✅ séparateur " - " + ignore location placeholder
 function metaLine(p: Performance) {
   const parts: string[] = [];
   if (p.year) parts.push(String(p.year));
@@ -87,7 +73,6 @@ function metaLine(p: Performance) {
 }
 
 export default function PerformancesPage() {
-  const supabase = useMemo(() => getSupabase(), []);
   const [loading, setLoading] = useState(true);
   const [performances, setPerformances] = useState<Performance[]>([]);
 
@@ -97,54 +82,42 @@ export default function PerformancesPage() {
     async function run() {
       setLoading(true);
 
-      if (!supabase) {
-        console.warn("[SUPABASE] missing env vars");
-        setLoading(false);
-        return;
-      }
-
       try {
-        const res = await supabase.storage.from(BUCKET).list(FOLDER, {
-          limit: 1000,
-          offset: 0,
-          sortBy: { column: "name", order: "asc" },
-        });
+        const res = await fetch(`/api/bunny/list?folder=${FOLDER}`);
+        if (!res.ok) throw new Error("list failed");
+
+        const data: { files: string[] } = await res.json();
 
         if (cancelled) return;
 
-        // ✅ vidéos + whitelist
-        const files =
-          res.data
-            ?.filter((f) => !!f.name && isVideoName(f.name))
-            .filter((f) => ALLOWED_PERFORMANCE_VIDEOS.has(stripExtension(f.name))) ??
-          [];
+        const files = (data.files ?? [])
+          .filter((name) => isVideoName(name))
+          .filter((name) => ALLOWED_PERFORMANCE_VIDEOS.has(stripExtension(name)));
 
-        const items: Performance[] = files.map((f) => {
-          const path = `${FOLDER}/${f.name}`;
-          const url = buildPublicUrl(supabase, path);
-
-          const year = parseYearFromFilename(f.name);
-          const title = stripExtension(f.name);
+        const items: Performance[] = files.map((name) => {
+          const path = `${FOLDER}/${name}`;
+          const url = buildPublicUrl(path);
+          const year = parseYearFromFilename(name);
+          const title = stripExtension(name);
 
           return {
-            id: slugify(f.name),
+            id: slugify(name),
             title,
             year,
-            location: undefined, // ✅ plus de "—" qui pollue la meta line
+            location: undefined,
             credits: "Ely & Marion Collective",
             videoSrc: url,
             path,
           };
         });
 
-        console.log("[SUPABASE] performances videos", items.length);
-        console.log("[SUPABASE] example", items[0]);
+        console.log("[BUNNY] performances videos", items.length);
 
         setPerformances(items);
       } catch (e) {
-        console.error("[SUPABASE] list error", e);
+        console.error("[BUNNY] list error", e);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -152,7 +125,7 @@ export default function PerformancesPage() {
     return () => {
       cancelled = true;
     };
-  }, [supabase]);
+  }, []);
 
   return (
     <main className="min-h-screen bg-white text-zinc-900">
@@ -174,9 +147,7 @@ export default function PerformancesPage() {
               </div>
               <div className="mt-2 text-sm text-zinc-700">
                 Rien trouvé dans{" "}
-                <span className="mono">
-                  {BUCKET}/{FOLDER}/
-                </span>
+                <span className="mono">{FOLDER}/</span>
               </div>
             </div>
           )}
