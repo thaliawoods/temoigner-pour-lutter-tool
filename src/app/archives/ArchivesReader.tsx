@@ -267,8 +267,8 @@ export default function ArchivesReader() {
           <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
             archives
           </div>
-          <h1 className="mt-2 text-3xl font-medium">bibliothèque</h1>
-          <p className="mt-2 max-w-2xl text-sm text-zinc-600">
+          <h1 className="mt-2 gertrude text-3xl font-medium">bibliothèque</h1>
+          <p className="mt-2 gertrude max-w-2xl text-sm text-zinc-600">
             sélectionner un média pour l'afficher.
           </p>
         </header>
@@ -303,7 +303,7 @@ export default function ArchivesReader() {
                     ].join(" ")}
                   >
                     <div className="flex items-baseline justify-between gap-3">
-                      <div className="text-[13px] leading-snug truncate">{label}</div>
+                      <div className="gertrude text-[13px] leading-snug truncate">{label}</div>
                       {item.ref?.year ? (
                         <div className={["mono text-[11px] uppercase tracking-widest shrink-0", active ? "text-white/80" : "text-zinc-500"].join(" ")}>
                           {formatYear(item.ref)}
@@ -312,7 +312,7 @@ export default function ArchivesReader() {
                     </div>
 
                     {item.ref?.creator ? (
-                      <div className={["mt-1 text-[12px]", active ? "text-white/70" : "text-zinc-600"].join(" ")}>
+                      <div className={["gertrude mt-1 text-[12px]", active ? "text-white/70" : "text-zinc-600"].join(" ")}>
                         {item.ref.creator}
                       </div>
                     ) : null}
@@ -354,39 +354,39 @@ export default function ArchivesReader() {
                       {selected.ref.location ? ` · ${selected.ref.location}` : ""}
                     </div>
 
-                    <h2 className="mt-3 text-[22px] leading-snug font-medium">
+                    <h2 className="mt-3 gertrude text-[22px] leading-snug font-medium">
                       {selected.ref.title}
                     </h2>
 
                     {selected.ref.creator ? (
-                      <div className="mt-2 text-sm text-zinc-700">{selected.ref.creator}</div>
+                      <div className="mt-2 gertrude text-sm text-zinc-700">{selected.ref.creator}</div>
                     ) : null}
 
                     <div className="mt-6 grid grid-cols-1 border border-zinc-200">
                       <div className="p-4 border-b border-zinc-200">
                         <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">type</div>
-                        <div className="mt-2 text-sm">{prettyType(selected.ref.type)}</div>
+                        <div className="mt-2 gertrude text-sm">{prettyType(selected.ref.type)}</div>
                       </div>
                       <div className="p-4 border-b border-zinc-200">
                         <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">année</div>
-                        <div className="mt-2 text-sm">{formatYear(selected.ref)}</div>
+                        <div className="mt-2 gertrude text-sm">{formatYear(selected.ref)}</div>
                       </div>
                       {selected.ref.location ? (
                         <div className="p-4 border-b border-zinc-200">
                           <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">lieu</div>
-                          <div className="mt-2 text-sm">{selected.ref.location}</div>
+                          <div className="mt-2 gertrude text-sm">{selected.ref.location}</div>
                         </div>
                       ) : null}
                       {selected.ref.notes?.trim() ? (
                         <div className="p-4 border-b border-zinc-200">
                           <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">notes</div>
-                          <div className="mt-2 text-sm leading-relaxed text-zinc-700">{selected.ref.notes}</div>
+                          <div className="mt-2 gertrude text-sm leading-relaxed text-zinc-700">{selected.ref.notes}</div>
                         </div>
                       ) : null}
                       {(selected.ref.sourceLabel || selected.ref.sourceUrl) ? (
                         <div className="p-4">
                           <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">source</div>
-                          <div className="mt-2 text-sm">
+                          <div className="mt-2 gertrude text-sm">
                             {selected.ref.sourceUrl ? (
                               <a className="underline" href={selected.ref.sourceUrl} target="_blank" rel="noreferrer">
                                 {selected.ref.sourceLabel ?? selected.ref.sourceUrl}
@@ -402,7 +402,7 @@ export default function ArchivesReader() {
                     <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
                       {selected.kind}
                     </div>
-                    <h2 className="mt-3 text-[22px] leading-snug font-medium break-all">
+                    <h2 className="mt-3 gertrude text-[22px] leading-snug font-medium break-all">
                       {selected.filename}
                     </h2>
                   </>

@@ -43,7 +43,7 @@ export default function PerformancesPage() {
         <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
           performances
         </div>
-        <h1 className="mt-2 text-3xl font-medium">extraits</h1>
+        <h1 className="mt-2 gertrude text-3xl font-medium">extraits</h1>
 
         <div className="mt-10 space-y-12">
           {!loading && files.length === 0 && (
@@ -71,7 +71,7 @@ export default function PerformancesPage() {
               </div>
 
               <div className="p-5 sm:p-6">
-                <h2 className="text-xl font-medium leading-snug">
+                <h2 className="gertrude text-xl font-medium leading-snug">
                   {stripExtension(filename)}
                 </h2>
               </div>
