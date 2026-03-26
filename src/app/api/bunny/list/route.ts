@@ -4,7 +4,7 @@ const STORAGE_API_KEY = process.env.BUNNY_STORAGE_API_KEY ?? "";
 const STORAGE_ZONE = process.env.BUNNY_STORAGE_ZONE ?? "tpl-media";
 const STORAGE_BASE = "https://storage.bunnycdn.com";
 
-const ALLOWED_FOLDERS = ["images", "video", "audio", "performances", "mix"];
+const ALLOWED_FOLDERS = ["images", "video", "audio", "performances", "mix", "creations"];
 
 type BunnyFile = {
   ObjectName: string;

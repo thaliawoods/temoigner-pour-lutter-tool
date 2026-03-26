@@ -86,6 +86,13 @@ export default function SiteHeader({
                 className="text-white whitespace-nowrap"
               />
               <NavItem
+                href="/creations"
+                label="Vos Créations"
+                align="center"
+                active={isActive("/creations")}
+                className="text-white whitespace-nowrap"
+              />
+              <NavItem
                 href="/collective"
                 label="Collective"
                 align="center"
@@ -135,6 +142,13 @@ export default function SiteHeader({
                   active={isActive("/performances")}
                   className="text-white whitespace-nowrap"
                 />
+                <NavItem
+                  href="/creations"
+                  label="Vos Créations"
+                  align="right"
+                  active={isActive("/creations")}
+                  className="text-white whitespace-nowrap"
+                />
               </div>
             </div>
           </div>
@@ -180,6 +194,13 @@ export default function SiteHeader({
               className="whitespace-nowrap"
             />
             <NavItem
+              href="/creations"
+              label="Vos Créations"
+              align="center"
+              active={isActive("/creations")}
+              className="whitespace-nowrap"
+            />
+            <NavItem
               href="/collective"
               label="Collective"
               align="center"
@@ -217,6 +238,13 @@ export default function SiteHeader({
               label="performances"
               align="center"
               active={isActive("/performances")}
+              className="whitespace-nowrap"
+            />
+            <NavItem
+              href="/creations"
+              label="vos créations"
+              align="center"
+              active={isActive("/creations")}
               className="whitespace-nowrap"
             />
             <NavItem

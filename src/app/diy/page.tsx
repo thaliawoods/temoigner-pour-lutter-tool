@@ -1131,6 +1131,35 @@ export default function DIYPage() {
   };
 
   const [videoExporting, setVideoExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [sharedDone, setSharedDone] = useState(false);
+  const [shareError, setShareError] = useState("");
+
+  const shareCreation = async () => {
+    const node = canvasCaptureRef.current;
+    if (!node) return;
+    setSharing(true);
+    setSharedDone(false);
+    setShareError("");
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(node, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
+      const blob = await fetch(dataUrl).then((r) => r.blob());
+      const fd = new FormData();
+      fd.append("file", blob, "creation.png");
+      const res = await fetch("/api/bunny/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        setSharedDone(true);
+      } else {
+        const json = await res.json().catch(() => ({}));
+        setShareError(json.error ?? `Erreur ${res.status}`);
+      }
+    } catch (e) {
+      setShareError(e instanceof Error ? e.message : "Erreur inconnue");
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const downloadVideo = async () => {
     const rectoNode = canvasCaptureRef.current;
@@ -1324,6 +1353,21 @@ export default function DIYPage() {
                 >
                   {videoExporting ? "enregistrement…" : "vidéo"}
                 </button>
+
+                <div className="flex flex-col items-start gap-1">
+                  <button
+                    className="border border-black bg-black text-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0 disabled:opacity-40"
+                    onClick={shareCreation}
+                    type="button"
+                    disabled={sharing || (items.length === 0 && canvasAudio.length === 0)}
+                    title="Partager sur la page Créations"
+                  >
+                    {sharing ? "envoi…" : sharedDone ? "partagé ✓" : "partager"}
+                  </button>
+                  {shareError && (
+                    <div className="mono text-[10px] text-red-500 max-w-[180px] leading-tight">{shareError}</div>
+                  )}
+                </div>
 
                 <button
                   className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"

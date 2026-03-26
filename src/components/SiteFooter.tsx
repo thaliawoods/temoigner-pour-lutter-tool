@@ -55,6 +55,11 @@ export default function SiteFooter() {
                 </Link>
               </div>
               <div>
+                <Link className="underline" href="/creations">
+                  Vos Créations
+                </Link>
+              </div>
+              <div>
                 <Link className="underline" href="/collective">
                   Collective
                 </Link>
