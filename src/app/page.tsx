@@ -435,7 +435,7 @@ export default function HomePage() {
           ELY &amp; MARION COLLECTIVE
         </div>
 
-        <h1 className="mt-3 font-sans text-[56px] leading-[1.02] tracking-[-0.02em]">
+        <h1 className="mt-3 gertrude text-[56px] leading-[1.02] tracking-[-0.02em]">
           Témoigner pour lutter
         </h1>
 

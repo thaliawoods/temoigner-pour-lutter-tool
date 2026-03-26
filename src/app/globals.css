@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Enby Gertrude";
+  src: url("/fonts/Enby_Gertrude_roman.woff2") format("woff2"),
+       url("/fonts/Enby_Gertrude_roman.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #111111;
@@ -23,6 +32,10 @@ input, select, textarea, button {
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
+}
+
+.gertrude {
+  font-family: "Enby Gertrude", Georgia, "Times New Roman", serif;
 }
 
 html, body {

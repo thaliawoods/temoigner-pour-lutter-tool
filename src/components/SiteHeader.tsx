@@ -19,7 +19,7 @@ function NavItem({
   className?: string;
 }) {
   const base =
-    "mono uppercase transition-opacity hover:opacity-70 " +
+    "gertrude uppercase transition-opacity hover:opacity-70 " +
     "text-[10px] sm:text-[11px] tracking-[0.22em] sm:tracking-widest";
   const underline = active ? "underline underline-offset-4" : "";
   const justify =

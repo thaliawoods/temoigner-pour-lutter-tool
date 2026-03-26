@@ -887,7 +887,7 @@ export default function DIYPage() {
                 do it yourself
               </div>
 
-              <h1 className="mt-3 text-[30px] leading-[1.15] font-semibold tracking-tight">
+              <h1 className="mt-3 gertrude text-[30px] leading-[1.15] font-semibold tracking-tight">
                 drag → compose → export
               </h1>
 

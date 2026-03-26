@@ -17,7 +17,7 @@ export default function SiteFooter() {
               contact
             </div>
 
-            <div className="mt-3 text-sm text-zinc-900 space-y-1">
+            <div className="mt-3 gertrude text-sm text-zinc-900 space-y-1">
               <div>
                 <a
                   className="underline"
@@ -38,7 +38,7 @@ export default function SiteFooter() {
               pages
             </div>
 
-            <div className="mt-3 text-sm space-y-1">
+            <div className="mt-3 gertrude text-sm space-y-1">
               <div>
                 <Link className="underline" href="/diy">
                   Do It Yourself
@@ -67,10 +67,10 @@ export default function SiteFooter() {
               credits
             </div>
 
-            <div className="mt-3 text-sm text-zinc-700">
+            <div className="mt-3 gertrude text-sm text-zinc-700">
               Ely &amp; Marion Collective
             </div>
-            <div className="mt-3 text-sm text-zinc-700">
+            <div className="mt-3 gertrude text-sm text-zinc-700">
               Thalia Woods
             </div>
           </div>

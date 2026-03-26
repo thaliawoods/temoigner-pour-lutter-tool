@@ -19,7 +19,7 @@ function MetaCell({ label, value }: { label: string; value: string }) {
       <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
         {label}
       </div>
-      <div className="mt-2 text-sm text-zinc-900">{value}</div>
+      <div className="mt-2 gertrude text-sm text-zinc-900">{value}</div>
     </div>
   );
 }
@@ -93,7 +93,7 @@ export default async function ArchiveReferencePage({
           archives
         </div>
 
-        <h1 className="mt-2 text-2xl font-medium">{r.title}</h1>
+        <h1 className="mt-2 gertrude text-2xl font-medium">{r.title}</h1>
 
         <div className="mt-6 border border-zinc-300">
           <div className="border-b border-zinc-300 bg-white">
@@ -136,7 +136,7 @@ export default async function ArchiveReferencePage({
               notes
             </div>
 
-            <p className="mt-3 text-sm leading-relaxed text-zinc-800">
+            <p className="mt-3 gertrude text-sm leading-relaxed text-zinc-800">
               {r.notes || "(no notes yet)"}
             </p>
 
