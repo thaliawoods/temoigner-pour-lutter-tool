@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { getAllReferences } from "@/lib/references";
+import type { TPLReference, TPLType } from "@/lib/schema";
 
 const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
 const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
@@ -13,6 +15,7 @@ type MediaFile = {
   url: string;
   kind: MediaKind;
   name: string;
+  ref?: TPLReference;
 };
 
 type PoolKind = "image" | "video";
@@ -36,6 +39,41 @@ type CanvasItem = {
   w: number;
   h: number;
 };
+
+// ─── normKey helpers ─────────────────────────────────────────────────────────
+
+function normKey(s: string) {
+  return s
+    .replace(/\.[a-z0-9]+$/i, "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function basename(src: string) {
+  return src.split("/").pop() ?? src;
+}
+
+function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
+  const map = new Map<string, TPLReference>();
+  for (const ref of refs) {
+    const srcs: string[] = [];
+    const m = ref.media as unknown;
+    if (m && typeof m === "object" && (m as { src?: string }).src)
+      srcs.push((m as { src: string }).src);
+    if (ref.mediaGallery)
+      for (const item of ref.mediaGallery) if (item?.src) srcs.push(item.src);
+    for (const src of srcs) {
+      const key = normKey(basename(src));
+      if (key && !map.has(key)) map.set(key, ref);
+    }
+  }
+  return map;
+}
+
+// ─── URL helpers ─────────────────────────────────────────────────────────────
 
 function encodePath(path: string) {
   return path
@@ -63,28 +101,42 @@ function slugify(s: string) {
 
 type StreamVideo = { guid: string; title: string; thumbnailFileName: string };
 
-function streamToMediaFile(v: StreamVideo): MediaFile {
+function streamToMediaFile(
+  v: StreamVideo,
+  refLookup: Map<string, TPLReference>
+): MediaFile {
+  const name = stripExtension(v.title);
+  const ref = refLookup.get(normKey(basename(v.title)));
   return {
     id: `stream-${v.guid}`,
     path: `stream/${v.guid}`,
     url: `${STREAM_CDN}/${v.guid}/play_720p.mp4`,
     kind: "video",
-    name: stripExtension(v.title),
+    name,
+    ref,
   };
 }
 
-function toMediaFile(folder: string, kind: MediaKind) {
+function toMediaFile(
+  folder: string,
+  kind: MediaKind,
+  refLookup: Map<string, TPLReference>
+) {
   return (name: string): MediaFile => {
     const path = `${folder}/${name}`;
+    const ref = refLookup.get(normKey(basename(name)));
     return {
       id: path,
       path,
       url: buildPublicUrl(path),
       kind,
       name: stripExtension(name),
+      ref,
     };
   };
 }
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -204,6 +256,248 @@ function getCanvasRectInStage(params: { stageW: number; topOffset: number }) {
   };
 }
 
+// ─── Type display labels ──────────────────────────────────────────────────────
+
+const TYPE_LABELS: Record<TPLType, string> = {
+  collectif: "Collectif, atelier, groupe",
+  film: "Film",
+  jeu_video: "Jeu Vidéo",
+  texte: "Livre, texte, manifeste",
+  musique: "Musique",
+  podcast: "Podcast",
+  performance: "Performance",
+  video: "Vidéo",
+  oeuvre_picturale: "Oeuvres picturales",
+};
+
+const TYPE_ORDER: TPLType[] = [
+  "film",
+  "video",
+  "performance",
+  "musique",
+  "podcast",
+  "texte",
+  "collectif",
+  "jeu_video",
+  "oeuvre_picturale",
+];
+
+// ─── VersoPage component ──────────────────────────────────────────────────────
+
+function VersoPage({
+  items,
+  canvasAudio,
+  filesById,
+  canvasW,
+  canvasH,
+}: {
+  items: CanvasItem[];
+  canvasAudio: { id: string; fileId: string }[];
+  filesById: Map<string, MediaFile>;
+  canvasW: number;
+  canvasH: number;
+}) {
+  const allFileIds = useMemo(
+    () => [
+      ...items.map((i) => i.fileId),
+      ...canvasAudio.map((a) => a.fileId),
+    ],
+    [items, canvasAudio]
+  );
+
+  // Collect unique refs + unmatched items from canvas
+  const { refsByType, unmatched } = useMemo(() => {
+    const seen = new Set<string>();
+    const map = new Map<TPLType, TPLReference[]>();
+    const unmatched: { id: string; name: string }[] = [];
+    const seenUnmatched = new Set<string>();
+
+    for (const fileId of allFileIds) {
+      const file = filesById.get(fileId);
+      if (!file) continue;
+
+      if (file.ref) {
+        const ref = file.ref;
+        if (!seen.has(ref.id)) {
+          seen.add(ref.id);
+          if (!map.has(ref.type)) map.set(ref.type, []);
+          map.get(ref.type)!.push(ref);
+        }
+      } else {
+        if (!seenUnmatched.has(file.id)) {
+          seenUnmatched.add(file.id);
+          unmatched.push({ id: file.id, name: file.name });
+        }
+      }
+    }
+
+    return { refsByType: map, unmatched };
+  }, [allFileIds, filesById]);
+
+  const hasContent = refsByType.size > 0 || unmatched.length > 0;
+  const activeTypes = TYPE_ORDER.filter((t) => refsByType.has(t));
+
+  return (
+    <div
+      style={{
+        width: canvasW,
+        height: canvasH,
+        background: "white",
+        padding: "20px",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "16px",
+          flexShrink: 0,
+        }}
+      >
+        <div
+          className="gertrude"
+          style={{ fontSize: "28px", lineHeight: 1.1, fontWeight: 600 }}
+        >
+          témoigner pour lutter
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div
+            className="mono"
+            style={{
+              fontSize: "9px",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#52525b",
+            }}
+          >
+            ely&amp;marion collective
+          </div>
+          <div
+            className="mono"
+            style={{
+              fontSize: "9px",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#a1a1aa",
+            }}
+          >
+            @ely.marion.collective
+          </div>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div
+        style={{
+          borderTop: "1px dashed #d4d4d8",
+          margin: "10px 0 12px 0",
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Body */}
+      {!hasContent ? (
+        <div
+          className="mono"
+          style={{
+            fontSize: "11px",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            color: "#a1a1aa",
+            paddingTop: "8px",
+          }}
+        >
+          Ajoutez des médias au canvas pour générer les références
+        </div>
+      ) : (
+        <div
+          style={{
+            flex: 1,
+            overflow: "hidden",
+            columnCount: (activeTypes.length + (unmatched.length > 0 ? 1 : 0)) <= 2 ? 2 : 3,
+            columnGap: "16px",
+          }}
+        >
+          {activeTypes.map((type) => {
+            const refs = refsByType.get(type)!;
+            return (
+              <div key={type} style={{ breakInside: "avoid", marginBottom: "12px" }}>
+                <div
+                  className="gertrude"
+                  style={{
+                    fontSize: "11px",
+                    fontStyle: "italic",
+                    borderBottom: "1px dashed #d4d4d8",
+                    paddingBottom: "3px",
+                    marginBottom: "5px",
+                    color: "#3f3f46",
+                  }}
+                >
+                  {TYPE_LABELS[type]}
+                </div>
+                {refs.map((ref) => {
+                  const yearStr = ref.year
+                    ? String(ref.year)
+                    : ref.yearRange
+                    ? `${ref.yearRange.start}–${ref.yearRange.end}`
+                    : null;
+                  return (
+                    <div
+                      key={ref.id}
+                      className="gertrude"
+                      style={{ fontSize: "10px", lineHeight: 1.4, marginBottom: "4px", color: "#27272a" }}
+                    >
+                      <span style={{ fontWeight: 500 }}>{ref.title}</span>
+                      {ref.creator ? <span style={{ color: "#71717a" }}> — {ref.creator}</span> : null}
+                      {yearStr ? <span style={{ color: "#a1a1aa" }}> ({yearStr})</span> : null}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          {unmatched.length > 0 && (
+            <div style={{ breakInside: "avoid", marginBottom: "12px" }}>
+              <div
+                className="gertrude"
+                style={{
+                  fontSize: "11px",
+                  fontStyle: "italic",
+                  borderBottom: "1px dashed #d4d4d8",
+                  paddingBottom: "3px",
+                  marginBottom: "5px",
+                  color: "#3f3f46",
+                }}
+              >
+                À référencer
+              </div>
+              {unmatched.map(({ id, name }) => (
+                <div
+                  key={id}
+                  className="gertrude"
+                  style={{ fontSize: "10px", lineHeight: 1.4, marginBottom: "4px", color: "#a1a1aa" }}
+                >
+                  Connecter la référence
+                  <span style={{ color: "#d4d4d8" }}> — {name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── WaveMini ─────────────────────────────────────────────────────────────────
+
 function WaveMini({ seed = 1 }: { seed?: number }) {
   const rand = mulberry32(seed);
   const bars = Array.from({ length: 26 }).map(() => 3 + Math.floor(rand() * 14));
@@ -219,6 +513,8 @@ function WaveMini({ seed = 1 }: { seed?: number }) {
     </div>
   );
 }
+
+// ─── PoolCard ─────────────────────────────────────────────────────────────────
 
 function PoolCard({
   f,
@@ -244,7 +540,9 @@ function PoolCard({
             preload="metadata"
             className="w-full h-full object-cover"
             crossOrigin="anonymous"
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
           />
         ) : (
           <img
@@ -253,7 +551,9 @@ function PoolCard({
             draggable={false}
             className="w-full h-full object-cover"
             crossOrigin="anonymous"
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
           />
         )}
         <div className="absolute inset-0 bg-white/35" />
@@ -276,6 +576,8 @@ function PoolCard({
   );
 }
 
+// ─── CanvasBlock ──────────────────────────────────────────────────────────────
+
 function CanvasBlock({
   f,
   selected,
@@ -295,7 +597,7 @@ function CanvasBlock({
     return (
       <div
         className={[
-          "absolute bg-white border border-zinc-200 select-none overflow-hidden",
+          "absolute bg-white border border-dashed border-zinc-300 select-none overflow-hidden",
           selected ? "outline outline-1 outline-black" : "",
         ].join(" ")}
         style={style}
@@ -304,25 +606,16 @@ function CanvasBlock({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <div className="p-3 h-full flex flex-col justify-between gap-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-                AUDIO
-              </div>
-              <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-                {trunc(f.name, 48)}
-              </div>
-            </div>
-            <WaveMini seed={f.id.length * 33} />
-          </div>
-
+        <div className="px-3 h-full flex flex-col justify-center gap-2">
+          <WaveMini seed={f.id.length * 33} />
           <audio
             controls
             preload="none"
             src={f.url}
             className="w-full"
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
           />
         </div>
       </div>
@@ -332,7 +625,7 @@ function CanvasBlock({
   return (
     <div
       className={[
-        "absolute bg-white border border-zinc-200 select-none overflow-hidden",
+        "absolute bg-white select-none overflow-hidden",
         selected ? "outline outline-1 outline-black" : "",
       ].join(" ")}
       style={style}
@@ -350,7 +643,9 @@ function CanvasBlock({
             preload="metadata"
             className="w-full h-full object-cover"
             crossOrigin="anonymous"
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
           />
         ) : (
           <img
@@ -359,27 +654,24 @@ function CanvasBlock({
             draggable={false}
             className="w-full h-full object-cover"
             crossOrigin="anonymous"
-            onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = "none";
+            }}
           />
         )}
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 p-3 bg-white/70 backdrop-blur-[2px]">
-        <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-          {f.kind.toUpperCase()}
-        </div>
-        <div className="mt-1 text-[12px] leading-snug text-zinc-900">
-          {trunc(f.name, 44)}
-        </div>
       </div>
     </div>
   );
 }
 
+// ─── DIYPage ──────────────────────────────────────────────────────────────────
+
 export default function DIYPage() {
   const [visualFiles, setVisualFiles] = useState<MediaFile[]>([]);
   const [audioFiles, setAudioFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [showVerso, setShowVerso] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -387,6 +679,9 @@ export default function DIYPage() {
     async function run() {
       setLoading(true);
       try {
+        const allRefs = getAllReferences();
+        const refLookup = buildRefLookup(allRefs);
+
         const [imgData, streamData, audData] = await Promise.all([
           fetch("/api/bunny/list?folder=images").then((r) => r.json()),
           fetch("/api/bunny/stream").then((r) => r.json()),
@@ -397,13 +692,15 @@ export default function DIYPage() {
 
         const images: MediaFile[] = (imgData.files ?? [])
           .filter((f: string) => /\.(png|jpe?g|webp|gif|svg|avif)$/i.test(f))
-          .map(toMediaFile("images", "image"));
+          .map(toMediaFile("images", "image", refLookup));
 
-        const videos: MediaFile[] = (streamData.videos ?? []).map(streamToMediaFile);
+        const videos: MediaFile[] = (streamData.videos ?? []).map(
+          (v: StreamVideo) => streamToMediaFile(v, refLookup)
+        );
 
         const audios: MediaFile[] = (audData.files ?? [])
           .filter((f: string) => /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(f))
-          .map(toMediaFile("audio", "audio"));
+          .map(toMediaFile("audio", "audio", refLookup));
 
         setVisualFiles([...images, ...videos]);
         setAudioFiles(audios);
@@ -429,10 +726,12 @@ export default function DIYPage() {
   const [poolSeed, setPoolSeed] = useState(1);
 
   const [items, setItems] = useState<CanvasItem[]>([]);
+  const [canvasAudio, setCanvasAudio] = useState<{ id: string; fileId: string }[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasCaptureRef = useRef<HTMLDivElement | null>(null);
+  const versoRef = useRef<HTMLDivElement | null>(null);
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
 
   React.useEffect(() => {
@@ -633,12 +932,14 @@ export default function DIYPage() {
       const localX = x - c.x;
       const localY = y - c.y;
 
-      const w = d.kind === "audio" ? 380 : 300;
-      const h = d.kind === "audio" ? 128 : 190;
-
-      setItems((prev) => {
+      if (d.kind === "audio") {
+        const audioId = `audio-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        setCanvasAudio((prev) => [...prev, { id: audioId, fileId: d.fileId }]);
+      } else {
+        const w = 300;
+        const h = 190;
         const id = `canvas-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-        return [
+        setItems((prev) => [
           ...prev,
           {
             id,
@@ -649,8 +950,8 @@ export default function DIYPage() {
             w,
             h,
           },
-        ];
-      });
+        ]);
+      }
     }
 
     setGhost(null);
@@ -778,6 +1079,7 @@ export default function DIYPage() {
 
   const clear = () => {
     setItems([]);
+    setCanvasAudio([]);
     setSelectedId(null);
   };
 
@@ -787,95 +1089,176 @@ export default function DIYPage() {
     setSelectedId(null);
   };
 
+  // ─── Export: 2-page PDF (recto + verso) ────────────────────────────────────
+
   const downloadPDF = async () => {
-    const node = canvasCaptureRef.current;
-    if (!node) return;
+    const rectoNode = canvasCaptureRef.current;
+    const versoNode = versoRef.current;
+    if (!rectoNode || !versoNode) return;
 
     const { toPng } = await import("html-to-image");
     const { jsPDF } = await import("jspdf");
 
-    const dataUrl = await toPng(node, {
-      cacheBust: true,
-      pixelRatio: 2,
-      backgroundColor: "#ffffff",
-    });
+    const [rectoDataUrl, versoDataUrl] = await Promise.all([
+      toPng(rectoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" }),
+      toPng(versoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" }),
+    ]);
 
-    const img = new Image();
-    img.src = dataUrl;
-    await new Promise<void>((res) => {
-      img.onload = () => res();
-    });
+    const loadImage = (url: string) =>
+      new Promise<HTMLImageElement>((res) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.src = url;
+      });
+
+    const [rectoImg, versoImg] = await Promise.all([
+      loadImage(rectoDataUrl),
+      loadImage(versoDataUrl),
+    ]);
 
     const pdf = new jsPDF({
-      orientation: img.width > img.height ? "landscape" : "portrait",
+      orientation: rectoImg.width > rectoImg.height ? "landscape" : "portrait",
       unit: "px",
-      format: [img.width, img.height],
+      format: [rectoImg.width, rectoImg.height],
     });
 
-    pdf.addImage(dataUrl, "PNG", 0, 0, img.width, img.height);
-    pdf.save("diy-canvas.pdf");
+    pdf.addImage(rectoDataUrl, "PNG", 0, 0, rectoImg.width, rectoImg.height);
+
+    pdf.addPage([versoImg.width, versoImg.height]);
+    pdf.addImage(versoDataUrl, "PNG", 0, 0, versoImg.width, versoImg.height);
+
+    pdf.save("temoigner-pour-lutter.pdf");
   };
+
+  const [videoExporting, setVideoExporting] = useState(false);
 
   const downloadVideo = async () => {
-    const ref = canvasCaptureRef.current;
-    if (!ref) return;
+    const rectoNode = canvasCaptureRef.current;
+    const versoNode = versoRef.current;
+    if (!rectoNode || !versoNode) return;
 
-    const html2canvas = (await import("html2canvas")).default;
+    setVideoExporting(true);
+    try {
+      const { toPng } = await import("html-to-image");
 
-    const preferredMime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-      ? "video/webm;codecs=vp9"
-      : "video/webm";
+      // Capture both sides as images
+      const [rectoDataUrl, versoDataUrl] = await Promise.all([
+        toPng(rectoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" }),
+        toPng(versoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" }),
+      ]);
 
-    const fps = 30;
-    const seconds = 15;
-    const totalFrames = fps * seconds;
+      const loadImage = (url: string) =>
+        new Promise<HTMLImageElement>((res) => {
+          const img = new Image();
+          img.onload = () => res(img);
+          img.src = url;
+        });
 
-    const canvas = html2canvas(ref, {
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      allowTaint: false,
-      scale: 2,
-    }) as unknown as HTMLCanvasElement;
+      const [rectoImg, versoImg] = await Promise.all([
+        loadImage(rectoDataUrl),
+        loadImage(versoDataUrl),
+      ]);
 
-    const stream = canvas.captureStream(fps);
-    const recorder = new MediaRecorder(stream, { mimeType: preferredMime });
-    const chunks: BlobPart[] = [];
+      // Create offscreen canvas matching recto dimensions
+      const offscreen = document.createElement("canvas");
+      offscreen.width = rectoImg.naturalWidth;
+      offscreen.height = rectoImg.naturalHeight;
+      const ctx = offscreen.getContext("2d")!;
 
-    recorder.ondataavailable = (e: BlobEvent) => {
-      if (e.data && e.data.size > 0) chunks.push(e.data);
-    };
+      // Draw recto first
+      ctx.drawImage(rectoImg, 0, 0);
 
-    recorder.start(250);
+      const preferredMime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+        ? "video/webm;codecs=vp9"
+        : "video/webm";
 
-    for (let i = 0; i < totalFrames; i++) {
-      await new Promise((r) => requestAnimationFrame(() => r(null)));
-      const next = html2canvas(ref, {
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        allowTaint: false,
-        scale: 2,
-      }) as unknown as HTMLCanvasElement;
+      const fps = 30;
+      const rectoDuration = 8000;  // 8 seconds recto
+      const versoDuration = 4000;  // 4 seconds verso
 
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.drawImage(next, 0, 0);
+      // Set up audio from canvasAudio items
+      let audioTracks: MediaStreamTrack[] = [];
+      let audioElements: HTMLAudioElement[] = [];
+      let audioCtx: AudioContext | null = null;
+
+      if (canvasAudio.length > 0) {
+        audioCtx = new AudioContext();
+        const dest = audioCtx.createMediaStreamDestination();
+
+        for (const { fileId } of canvasAudio) {
+          const file = filesById.get(fileId);
+          if (!file) continue;
+          const audioEl = new Audio(file.url);
+          audioEl.crossOrigin = "anonymous";
+          audioEl.loop = true;
+          audioElements.push(audioEl);
+          const src = audioCtx.createMediaElementSource(audioEl);
+          src.connect(dest);
+          src.connect(audioCtx.destination);
+        }
+
+        audioTracks = dest.stream.getAudioTracks();
+      }
+
+      // Build combined stream: video + optional audio
+      const videoStream = offscreen.captureStream(fps);
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioTracks,
+      ]);
+
+      const recorder = new MediaRecorder(combinedStream, { mimeType: preferredMime });
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e: BlobEvent) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      // Start audio playback
+      for (const audioEl of audioElements) {
+        await audioEl.play().catch(() => {});
+      }
+
+      recorder.start(250);
+
+      // Show recto for rectoDuration
+      await new Promise<void>((res) => setTimeout(res, rectoDuration));
+
+      // Switch canvas to verso (scale to fit if dimensions differ)
+      ctx.clearRect(0, 0, offscreen.width, offscreen.height);
+      ctx.drawImage(
+        versoImg,
+        0,
+        0,
+        offscreen.width,
+        offscreen.height,
+      );
+
+      // Show verso for versoDuration
+      await new Promise<void>((res) => setTimeout(res, versoDuration));
+
+      recorder.stop();
+      await new Promise<void>((res) => { recorder.onstop = () => res(); });
+
+      // Stop audio
+      for (const audioEl of audioElements) {
+        audioEl.pause();
+        audioEl.src = "";
+      }
+      audioCtx?.close();
+
+      const blob = new Blob(chunks, { type: preferredMime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "temoigner-pour-lutter.webm";
+      a.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } finally {
+      setVideoExporting(false);
     }
-
-    recorder.stop();
-
-    await new Promise<void>((res) => {
-      recorder.onstop = () => res();
-    });
-
-    const blob = new Blob(chunks, { type: preferredMime });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "diy-canvas.webm";
-    a.click();
-
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+
 
   return (
     <main className="bg-white text-zinc-900">
@@ -909,11 +1292,37 @@ export default function DIYPage() {
                 </button>
 
                 <button
+                  className="border px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  onClick={() => setShowVerso(false)}
+                  type="button"
+                  style={!showVerso ? { borderColor: "#27272a", background: "#27272a", color: "#fff" } : { borderColor: "#d4d4d8", background: "white", color: "#71717a" }}
+                >
+                  recto
+                </button>
+                <button
+                  className="border px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  onClick={() => setShowVerso(true)}
+                  type="button"
+                  style={showVerso ? { borderColor: "#27272a", background: "#27272a", color: "#fff" } : { borderColor: "#d4d4d8", background: "white", color: "#71717a" }}
+                >
+                  verso
+                </button>
+
+                <button
                   className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
                   onClick={downloadPDF}
                   type="button"
                 >
-                  download pdf
+                  pdf
+                </button>
+
+                <button
+                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0 disabled:opacity-40"
+                  onClick={downloadVideo}
+                  type="button"
+                  disabled={videoExporting}
+                >
+                  {videoExporting ? "enregistrement…" : "vidéo"}
                 </button>
 
                 <button
@@ -950,23 +1359,25 @@ export default function DIYPage() {
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
             >
-              {tileData.map(({ tile, file }) => {
-                const style: React.CSSProperties = {
-                  left: tile.x,
-                  top: tile.y,
-                  width: tile.w,
-                  height: tile.h,
-                };
+              {/* Pool tiles (only shown when recto) */}
+              {!showVerso &&
+                tileData.map(({ tile, file }) => {
+                  const style: React.CSSProperties = {
+                    left: tile.x,
+                    top: tile.y,
+                    width: tile.w,
+                    height: tile.h,
+                  };
 
-                return (
-                  <PoolCard
-                    key={tile.id}
-                    f={file}
-                    style={style}
-                    onPointerDown={(e) => beginDragVisual(e, tile)}
-                  />
-                );
-              })}
+                  return (
+                    <PoolCard
+                      key={tile.id}
+                      f={file}
+                      style={style}
+                      onPointerDown={(e) => beginDragVisual(e, tile)}
+                    />
+                  );
+                })}
 
               <div
                 className="absolute"
@@ -978,82 +1389,120 @@ export default function DIYPage() {
                   background: "#fff",
                 }}
               >
-                {/* canvas (captured for export) */}
-                <div
-                  ref={canvasCaptureRef}
-                  className="absolute border border-zinc-200 bg-white"
-                  style={{
-                    left: 0,
-                    top: 0,
-                    width: rects.canvas.w,
-                    height: rects.canvas.h,
-                  }}
-                  onPointerDown={() => setSelectedId(null)}
-                >
+                {/* Canvas area — recto or verso */}
+                {showVerso ? (
                   <div
-                    className="absolute inset-0"
+                    ref={canvasCaptureRef}
                     style={{
-                      backgroundImage:
-                        "linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px)",
-                      backgroundSize: "48px 48px",
+                      width: rects.canvas.w,
+                      height: rects.canvas.h,
+                      border: "1px solid #e4e4e7",
+                      background: "white",
                     }}
-                  />
-
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                      drag media here
-                    </div>
+                  >
+                    <VersoPage
+                      items={items}
+                      canvasAudio={canvasAudio}
+                      filesById={filesById}
+                      canvasW={rects.canvas.w}
+                      canvasH={rects.canvas.h}
+                    />
                   </div>
-
-                  {items.map((it) => {
-                    const f = filesById.get(it.fileId);
-                    if (!f) return null;
-
-                    return (
-                      <div
-                        key={it.id}
-                        className={[
-                          "absolute bg-white border border-zinc-200 select-none overflow-hidden",
-                          selectedId === it.id
-                            ? "outline outline-1 outline-black"
-                            : "",
-                        ].join(" ")}
-                        style={{
-                          left: it.x,
-                          top: it.y,
-                          width: it.w,
-                          height: it.h,
-                        }}
-                        onPointerDown={(e) => onBlockDown(e, it)}
-                        onPointerMove={onBlockMove}
-                        onPointerUp={onBlockUp}
-                        onPointerCancel={onBlockUp}
-                      >
-                        <CanvasBlock
-                          f={f}
-                          selected={selectedId === it.id}
-                          style={{ left: 0, top: 0, width: it.w, height: it.h }}
-                          onPointerDown={() => {}}
-                          onPointerMove={() => {}}
-                          onPointerUp={() => {}}
-                        />
-
-                        {selectedId === it.id ? (
-                          <div
-                            className="absolute right-1 bottom-1 h-3 w-3 border border-black bg-white cursor-se-resize"
-                            onPointerDown={(e) => onResizeDown(e, it)}
-                            onPointerMove={onResizeMove}
-                            onPointerUp={onResizeUp}
-                            onPointerCancel={onResizeUp}
-                            title="resize"
-                          />
-                        ) : null}
+                ) : (
+                  <div
+                    ref={canvasCaptureRef}
+                    className="absolute bg-white"
+                    style={{
+                      left: 0,
+                      top: 0,
+                      width: rects.canvas.w,
+                      height: rects.canvas.h,
+                      border: "1px dashed #d4d4d8",
+                    }}
+                    onPointerDown={() => setSelectedId(null)}
+                  >
+                    {items.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/20">
+                          drag media here
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
 
-                {/* audio console (not captured) */}
+                    {items.map((it) => {
+                      const f = filesById.get(it.fileId);
+                      if (!f) return null;
+
+                      return (
+                        <div
+                          key={it.id}
+                          className={[
+                            "absolute bg-white select-none overflow-hidden",
+                            selectedId === it.id ? "outline outline-1 outline-black" : "",
+                          ].join(" ")}
+                          style={{ left: it.x, top: it.y, width: it.w, height: it.h }}
+                          onPointerDown={(e) => onBlockDown(e, it)}
+                          onPointerMove={onBlockMove}
+                          onPointerUp={onBlockUp}
+                          onPointerCancel={onBlockUp}
+                        >
+                          <CanvasBlock
+                            f={f}
+                            selected={selectedId === it.id}
+                            style={{ left: 0, top: 0, width: it.w, height: it.h }}
+                            onPointerDown={() => {}}
+                            onPointerMove={() => {}}
+                            onPointerUp={() => {}}
+                          />
+                          {selectedId === it.id ? (
+                            <div
+                              className="absolute right-1 bottom-1 h-3 w-3 border border-black bg-white cursor-se-resize"
+                              onPointerDown={(e) => onResizeDown(e, it)}
+                              onPointerMove={onResizeMove}
+                              onPointerUp={onResizeUp}
+                              onPointerCancel={onResizeUp}
+                              title="resize"
+                            />
+                          ) : null}
+                        </div>
+                      );
+                    })}
+
+                    {/* Audio strip — pinned to the bottom of the canvas */}
+                    {canvasAudio.length > 0 && (
+                      <div
+                        className="absolute inset-x-0 bottom-0 bg-white"
+                        style={{ borderTop: "1px dashed #d4d4d8" }}
+                      >
+                        <div className="flex overflow-x-auto divide-x divide-dashed divide-zinc-200">
+                          {canvasAudio.map(({ id, fileId }) => {
+                            const f = filesById.get(fileId);
+                            if (!f) return null;
+                            return (
+                              <div key={id} className="flex items-center gap-2 px-3 py-2 shrink-0">
+                                <WaveMini seed={fileId.length * 13} />
+                                <audio
+                                  src={f.url}
+                                  controls
+                                  preload="none"
+                                  style={{ height: "28px", width: "200px" }}
+                                  onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+                                />
+                                <button
+                                  type="button"
+                                  className="mono text-[10px] text-black/25 hover:text-black/70 leading-none"
+                                  onClick={() => setCanvasAudio((prev) => prev.filter((a) => a.id !== id))}
+                                >×</button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Audio console (not captured) */}
                 <div
                   className="absolute border border-zinc-200 bg-white"
                   style={{
@@ -1106,7 +1555,8 @@ export default function DIYPage() {
                                 src={f.url}
                                 className="w-[260px]"
                                 onError={(e) => {
-                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                  (e.currentTarget as HTMLElement).style.display =
+                                    "none";
                                 }}
                               />
                             </div>
@@ -1124,6 +1574,7 @@ export default function DIYPage() {
                 </div>
               </div>
 
+              {/* Ghost drag preview */}
               {ghost ? (
                 <div
                   className="absolute pointer-events-none bg-white border border-zinc-200 opacity-85 overflow-hidden"
@@ -1151,6 +1602,34 @@ export default function DIYPage() {
           </div>
 
           <div className="h-24" />
+        </div>
+      </div>
+
+      {/* Hidden verso div for PDF capture — always rendered off-screen */}
+      <div
+        style={{
+          position: "absolute",
+          left: "-99999px",
+          top: 0,
+          width: rects.canvas.w,
+          height: rects.canvas.h,
+        }}
+      >
+        <div
+          ref={versoRef}
+          style={{
+            width: rects.canvas.w,
+            height: rects.canvas.h,
+            background: "white",
+          }}
+        >
+          <VersoPage
+            items={items}
+            canvasAudio={canvasAudio}
+            filesById={filesById}
+            canvasW={rects.canvas.w}
+            canvasH={rects.canvas.h}
+          />
         </div>
       </div>
     </main>
