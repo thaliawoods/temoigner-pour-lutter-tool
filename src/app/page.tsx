@@ -228,6 +228,8 @@ export default function HomePage() {
 
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
+  const [canvasReady, setCanvasReady] = useState(false);
+  const [loadedTileIds, setLoadedTileIds] = useState<Set<string>>(new Set());
 
   const dragTileRef = useRef<DragState | null>(null);
   const resizeTileRef = useRef<ResizeState | null>(null);
@@ -267,6 +269,28 @@ export default function HomePage() {
     const MAX_PRELOAD = 120;
     for (const m of media.slice(0, MAX_PRELOAD)) preloadPublicImage(m.path);
   }, [media]);
+
+  // Reveal canvas once the first batch of images is fully decoded and paintable
+  useEffect(() => {
+    if (tiles.length === 0) return;
+    setCanvasReady(false);
+    let cancelled = false;
+
+    const batch = tiles.slice(0, Math.min(10, tiles.length));
+    const promises = batch.map((t) => {
+      const img = new window.Image();
+      img.src = buildPublicUrl(t.media.path);
+      return typeof img.decode === "function"
+        ? img.decode().catch(() => {})
+        : new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); });
+    });
+
+    Promise.all(promises).then(() => {
+      if (!cancelled) setCanvasReady(true);
+    });
+
+    return () => { cancelled = true; };
+  }, [tiles]);
 
   function bringToFront(id: string) {
     setTiles((prev) => {
@@ -473,6 +497,7 @@ export default function HomePage() {
               const url = buildPublicUrl(t.media.path);
               const isPriority = idx < 10;
 
+              const tileLoaded = loadedTileIds.has(t.id);
               return (
                 <div
                   key={t.id}
@@ -482,11 +507,12 @@ export default function HomePage() {
                     width: t.w,
                     height: t.h,
                     zIndex: t.z,
-                    background: "white",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                    background: tileLoaded ? "white" : "transparent",
+                    boxShadow: tileLoaded ? "0 10px 30px rgba(0,0,0,0.08)" : "none",
+                    opacity: tileLoaded ? 1 : 0,
                     touchAction: "none",
                     transition:
-                      "transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), height 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+                      "opacity 500ms ease, transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1), width 420ms cubic-bezier(0.2, 0.8, 0.2, 1), height 420ms cubic-bezier(0.2, 0.8, 0.2, 1)",
                   }}
                   onPointerDown={(e) => onTilePointerDown(e, t.id)}
                 >
@@ -497,7 +523,17 @@ export default function HomePage() {
                     loading={isPriority ? "eager" : "lazy"}
                     decoding="async"
                     fetchPriority={isPriority ? "high" : "auto"}
-                    className="w-full h-full object-cover bg-black/[0.03]"
+                    className="w-full h-full object-cover"
+                    onLoad={(e) => {
+                      const el = e.currentTarget;
+                      const reveal = () =>
+                        setLoadedTileIds((prev) => new Set([...prev, t.id]));
+                      if (typeof el.decode === "function") {
+                        el.decode().then(reveal).catch(reveal);
+                      } else {
+                        reveal();
+                      }
+                    }}
                     onError={() =>
                       setErroredTiles((prev) => new Set([...prev, t.id]))
                     }
@@ -517,6 +553,15 @@ export default function HomePage() {
               );
             })}
           </div>
+
+          {/* White cover that fades out once enough images have loaded */}
+          <div
+            className="absolute inset-0 bg-white pointer-events-none z-40"
+            style={{
+              opacity: canvasReady ? 0 : 1,
+              transition: "opacity 900ms ease",
+            }}
+          />
 
           <button
             type="button"
