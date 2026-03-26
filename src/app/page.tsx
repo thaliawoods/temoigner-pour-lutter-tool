@@ -98,66 +98,43 @@ function relaxLayout(
   passes: number
 ): Tile[] {
   const next = tiles.map((t) => ({ ...t }));
-
   for (let pass = 0; pass < passes; pass++) {
     for (let i = 0; i < next.length; i++) {
       for (let j = i + 1; j < next.length; j++) {
         const a = next[i];
         const b = next[j];
-
-        const ax = a.x + a.w * 0.5;
-        const ay = a.y + a.h * 0.5;
-        const bx = b.x + b.w * 0.5;
-        const by = b.y + b.h * 0.5;
-
-        const dx = ax - bx;
-        const dy = ay - by;
-
+        const dx = (a.x + a.w * 0.5) - (b.x + b.w * 0.5);
+        const dy = (a.y + a.h * 0.5) - (b.y + b.h * 0.5);
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-
-        const minDist =
-          Math.min(a.w, a.h) * 0.28 + Math.min(b.w, b.h) * 0.28 + 22;
-
+        const minDist = Math.min(a.w, a.h) * 0.28 + Math.min(b.w, b.h) * 0.28 + 22;
         if (dist < minDist) {
           const push = (minDist - dist) * 0.5;
-          const ux = dx / dist;
-          const uy = dy / dist;
-
-          a.x += ux * push;
-          a.y += uy * push;
-          b.x -= ux * push;
-          b.y -= uy * push;
-
-          a.x = clamp(a.x, pad, viewportW - pad - a.w);
-          a.y = clamp(a.y, pad, viewportH - pad - a.h);
-          b.x = clamp(b.x, pad, viewportW - pad - b.w);
-          b.y = clamp(b.y, pad, viewportH - pad - b.h);
+          const ux = dx / dist, uy = dy / dist;
+          a.x = clamp(a.x + ux * push, pad, viewportW - pad - a.w);
+          a.y = clamp(a.y + uy * push, pad, viewportH - pad - a.h);
+          b.x = clamp(b.x - ux * push, pad, viewportW - pad - b.w);
+          b.y = clamp(b.y - uy * push, pad, viewportH - pad - b.h);
         }
       }
     }
   }
-
   return next;
 }
 
-/**
- * Layout éparpillé "raisonnable" + tailles normales (variantes mais pas extrêmes).
- */
 function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Tile[] {
   const count = media.length;
+  if (count === 0) return [];
 
   const baseW = viewportW > 900 ? 240 : 175;
   const baseH = viewportW > 900 ? 175 : 130;
-
-  const pad = viewportW > 900 ? 70 : 50;
+  const pad   = viewportW > 900 ? 70  : 50;
 
   const centerX = Math.round(viewportW * 0.5);
   const centerY = Math.round(viewportH * 0.52);
-
   const rx = Math.max(180, (viewportW - pad * 2) * 0.72);
   const ry = Math.max(160, (viewportH - pad * 2) * 0.62);
 
-  const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+  const GOLDEN   = Math.PI * (3 - Math.sqrt(5));
   const seedBase = Math.floor((viewportW * 0.21 + viewportH * 0.17 + count * 9.3) * 10);
 
   const tiles: Tile[] = media.map((m, i) => {
@@ -169,32 +146,17 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
     const w = Math.round(baseW + r3 * (viewportW > 900 ? 220 : 140));
     const h = Math.round(baseH + r1 * (viewportW > 900 ? 180 : 120));
 
-    const t = count <= 1 ? 0 : i / (count - 1);
-    const prog = Math.pow(t, 0.55);
-
+    const t     = count <= 1 ? 0 : i / (count - 1);
+    const prog  = Math.pow(t, 0.55);
     const angle = i * GOLDEN + (r4 - 0.5) * 0.9;
 
-    const maxRX = Math.max(60, rx - w * 0.55);
-    const maxRY = Math.max(60, ry - h * 0.55);
-
-    const jitterX = (r1 - 0.5) * 170;
-    const jitterY = (r2 - 0.5) * 140;
-
-    let x = Math.round(centerX + Math.cos(angle) * (prog * maxRX) + jitterX);
-    let y = Math.round(centerY + Math.sin(angle) * (prog * maxRY) + jitterY);
+    let x = Math.round(centerX + Math.cos(angle) * (prog * Math.max(60, rx - w * 0.55)) + (r1 - 0.5) * 170);
+    let y = Math.round(centerY + Math.sin(angle) * (prog * Math.max(60, ry - h * 0.55)) + (r2 - 0.5) * 140);
 
     x = clamp(x, pad, viewportW - pad - w);
     y = clamp(y, pad, viewportH - pad - h);
 
-    return {
-      id: `image-${i}-${m.path}`,
-      media: m,
-      x,
-      y,
-      w,
-      h,
-      z: i + 1,
-    };
+    return { id: `image-${i}-${m.path}`, media: m, x, y, w, h, z: i + 1 };
   });
 
   return relaxLayout(tiles, viewportW, viewportH, pad, 3);
@@ -228,7 +190,6 @@ export default function HomePage() {
 
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: 1 });
-  const [canvasReady, setCanvasReady] = useState(false);
   const [loadedTileIds, setLoadedTileIds] = useState<Set<string>>(new Set());
 
   const dragTileRef = useRef<DragState | null>(null);
@@ -247,13 +208,14 @@ export default function HomePage() {
       const nextTiles = makeTiles(media, rect.width, rect.height);
       setTiles(nextTiles);
 
+      if (nextTiles.length === 0) return;
+
+      const fitted = fitViewToTiles(nextTiles, rect.width, rect.height);
+      defaultViewRef.current = fitted;
+
       if (!didInitViewRef.current) {
-        const fitted = fitViewToTiles(nextTiles, rect.width, rect.height);
-        defaultViewRef.current = fitted;
         setView(fitted);
         didInitViewRef.current = true;
-      } else {
-        defaultViewRef.current = fitViewToTiles(nextTiles, rect.width, rect.height);
       }
     };
 
@@ -270,27 +232,6 @@ export default function HomePage() {
     for (const m of media.slice(0, MAX_PRELOAD)) preloadPublicImage(m.path);
   }, [media]);
 
-  // Reveal canvas once the first batch of images is fully decoded and paintable
-  useEffect(() => {
-    if (tiles.length === 0) return;
-    setCanvasReady(false);
-    let cancelled = false;
-
-    const batch = tiles.slice(0, Math.min(10, tiles.length));
-    const promises = batch.map((t) => {
-      const img = new window.Image();
-      img.src = buildPublicUrl(t.media.path);
-      return typeof img.decode === "function"
-        ? img.decode().catch(() => {})
-        : new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); });
-    });
-
-    Promise.all(promises).then(() => {
-      if (!cancelled) setCanvasReady(true);
-    });
-
-    return () => { cancelled = true; };
-  }, [tiles]);
 
   function bringToFront(id: string) {
     setTiles((prev) => {
@@ -507,7 +448,7 @@ export default function HomePage() {
                     width: t.w,
                     height: t.h,
                     zIndex: t.z,
-                    background: tileLoaded ? "white" : "transparent",
+                    background: "white",
                     boxShadow: tileLoaded ? "0 10px 30px rgba(0,0,0,0.08)" : "none",
                     opacity: tileLoaded ? 1 : 0,
                     touchAction: "none",
@@ -553,15 +494,6 @@ export default function HomePage() {
               );
             })}
           </div>
-
-          {/* White cover that fades out once enough images have loaded */}
-          <div
-            className="absolute inset-0 bg-white pointer-events-none z-40"
-            style={{
-              opacity: canvasReady ? 0 : 1,
-              transition: "opacity 900ms ease",
-            }}
-          />
 
           <button
             type="button"
