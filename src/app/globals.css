@@ -47,6 +47,7 @@ body {
   overflow-x: hidden;
 }
 
+
 @media print {
   body * {
     visibility: hidden !important;
