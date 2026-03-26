@@ -2,26 +2,32 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAllReferences } from "@/lib/references";
+import { buildPublicUrl } from "@/lib/public-url";
 import type { TPLReference } from "@/lib/schema";
 
+const ACCENT = "#3bff6e";
 const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
 const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
 
+// ── types ────────────────────────────────────────────────────────────────────
+
 type MediaKind = "image" | "video" | "audio";
 
-type ArchiveItem = {
+type ListItem = {
   id: string;
   url: string;
   kind: MediaKind;
   filename: string;
   poster?: string;
-  ref?: TPLReference;
+  ref: TPLReference | null;
 };
 
 type StreamVideo = { guid: string; title: string; thumbnailFileName: string };
 
-function encodePath(path: string) {
-  return path.split("/").map((p) => encodeURIComponent(p)).join("/");
+// ── helpers ───────────────────────────────────────────────────────────────────
+
+function encodePath(p: string) {
+  return p.split("/").map(encodeURIComponent).join("/");
 }
 
 function buildStorageUrl(folder: string, filename: string) {
@@ -29,7 +35,7 @@ function buildStorageUrl(folder: string, filename: string) {
   return `${CDN_URL}/${encodePath(`${folder}/${filename}`)}`;
 }
 
-function normKey(s: string): string {
+function normKey(s: string) {
   return s
     .replace(/\.[a-z0-9]+$/i, "")
     .toLowerCase()
@@ -39,12 +45,22 @@ function normKey(s: string): string {
     .trim();
 }
 
-function basename(src: string): string {
+function basename(src: string) {
   return src.split("/").pop() ?? src;
 }
 
-function stripExtension(s: string) {
+function stripExt(s: string) {
   return s.replace(/\.[a-z0-9]+$/i, "");
+}
+
+function formatYear(r: TPLReference): string {
+  if (r.year) return String(r.year);
+  if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
+  return "—";
+}
+
+function prettyType(t: string) {
+  return t.replaceAll("_", " ");
 }
 
 function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
@@ -68,69 +84,127 @@ function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
   return map;
 }
 
-function prettyType(t: string) {
-  return t.replaceAll("_", " ");
-}
+const IMAGE_EXTS = /\.(png|jpe?g|webp|gif|svg|avif)$/i;
+const AUDIO_EXTS = /\.(mp3|wav|ogg|m4a|aac|flac)$/i;
 
-function formatYear(ref: TPLReference): string {
-  if (ref.year) return String(ref.year);
-  if (ref.yearRange) return `${ref.yearRange.start}–${ref.yearRange.end}`;
-  return "—";
-}
+// ── sub-components ────────────────────────────────────────────────────────────
 
-function MediaDisplay({ item, onError }: { item: ArchiveItem; onError: () => void }) {
-  if (item.kind === "image") {
-    return (
-      <img
-        src={item.url}
-        alt={item.ref?.title ?? item.filename}
-        className="h-full w-full object-contain"
-        onError={onError}
-      />
-    );
-  }
-
+function MediaDisplay({ item }: { item: ListItem }) {
   if (item.kind === "video") {
     return (
       <video
         src={item.url}
         poster={item.poster}
-        className="h-full w-full object-contain"
-        muted
-        playsInline
         controls
+        playsInline
         preload="metadata"
-        onError={onError}
+        className="w-full max-h-[480px] object-contain bg-black/5"
+        style={{ display: "block" }}
       />
     );
   }
+  if (item.kind === "audio") {
+    return (
+      <div className="py-4">
+        <audio src={item.url} controls preload="metadata" className="w-full" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={item.url}
+      alt={item.ref?.title ?? item.filename}
+      className="w-full max-h-[480px] object-contain bg-black/5"
+      style={{ display: "block" }}
+    />
+  );
+}
+
+function ExpandedContent({ item }: { item: ListItem }) {
+  const r = item.ref;
 
   return (
-    <div className="h-full w-full flex items-center justify-center bg-zinc-50">
-      <audio
-        src={item.url}
-        controls
-        preload="metadata"
-        className="w-[92%]"
-        onError={onError}
-      />
+    <div
+      className="pb-8 pt-4"
+      style={{ paddingLeft: "calc(7rem + 1rem)" }}
+    >
+      {/* Media */}
+      <div className="mb-4 max-w-[640px]">
+        <MediaDisplay item={item} />
+      </div>
+
+      {/* Gallery (ref-only) */}
+      {r?.mediaGallery && r.mediaGallery.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2 max-w-[640px]">
+          {r.mediaGallery.map((m, i) => {
+            const url = buildPublicUrl(m.src);
+            if (!url) return null;
+            if (m.kind === "video") {
+              return (
+                <video
+                  key={i}
+                  src={url}
+                  preload="metadata"
+                  className="h-20 w-32 object-cover bg-black/5"
+                  style={{ display: "block" }}
+                />
+              );
+            }
+            return (
+              <img
+                key={i}
+                src={url}
+                alt={`${r.title} — ${i + 1}`}
+                className="h-20 w-32 object-cover bg-black/5"
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Notes */}
+      {r?.notes?.trim() && (
+        <p className="gertrude text-[16px] leading-[1.7] max-w-[60ch] mb-3 text-black">
+          {r.notes}
+        </p>
+      )}
+
+      {/* Meta */}
+      <div className="mono text-[11px] uppercase tracking-[0.18em] text-black/40 flex flex-wrap gap-x-4 gap-y-1">
+        {r ? (
+          <>
+            {r.type && <span>{prettyType(r.type)}</span>}
+            {r.location && <span>{r.location}</span>}
+            {r.sourceLabel && (
+              <span>
+                {r.sourceUrl ? (
+                  <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="underline">
+                    {r.sourceLabel}
+                  </a>
+                ) : r.sourceLabel}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-black/25 normal-case">{item.filename}</span>
+        )}
+      </div>
     </div>
   );
 }
 
-const IMAGE_EXTS = /\.(png|jpe?g|webp|gif|svg|avif)$/i;
-const AUDIO_EXTS = /\.(mp3|wav|ogg|m4a|aac|flac)$/i;
+// ── main ──────────────────────────────────────────────────────────────────────
 
 export default function ArchivesReader() {
   const allRefs = useMemo(() => getAllReferences(), []);
   const refLookup = useMemo(() => buildRefLookup(allRefs), [allRefs]);
 
-  const [allItems, setAllItems] = useState<ArchiveItem[]>([]);
+  const [allItems, setAllItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erroredIds, setErroredIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
-
     async function run() {
       try {
         const [imgData, streamData, audData] = await Promise.all([
@@ -140,280 +214,210 @@ export default function ArchivesReader() {
         ]);
         if (cancelled) return;
 
-        const images: ArchiveItem[] = (imgData.files ?? [])
+        const images: ListItem[] = (imgData.files ?? [])
           .filter((f: string) => IMAGE_EXTS.test(f))
-          .map((filename: string): ArchiveItem => ({
+          .map((filename: string): ListItem => ({
             id: `images/${filename}`,
             url: buildStorageUrl("images", filename),
             kind: "image",
-            filename: stripExtension(filename),
-            ref: refLookup.get(normKey(filename)),
+            filename: stripExt(filename),
+            ref: refLookup.get(normKey(filename)) ?? null,
           }));
 
-        const videos: ArchiveItem[] = (streamData.videos ?? []).map(
-          (v: StreamVideo): ArchiveItem => ({
+        const videos: ListItem[] = (streamData.videos ?? []).map(
+          (v: StreamVideo): ListItem => ({
             id: `stream/${v.guid}`,
             url: `${STREAM_CDN}/${v.guid}/play_720p.mp4`,
             kind: "video",
-            filename: stripExtension(v.title),
+            filename: stripExt(v.title),
             poster: `${STREAM_CDN}/${v.guid}/${v.thumbnailFileName}`,
-            ref: refLookup.get(normKey(v.title)),
+            ref: refLookup.get(normKey(v.title)) ?? null,
           })
         );
 
-        const audios: ArchiveItem[] = (audData.files ?? [])
+        const audios: ListItem[] = (audData.files ?? [])
           .filter((f: string) => AUDIO_EXTS.test(f))
-          .map((filename: string): ArchiveItem => ({
+          .map((filename: string): ListItem => ({
             id: `audio/${filename}`,
             url: buildStorageUrl("audio", filename),
             kind: "audio",
-            filename: stripExtension(filename),
-            ref: refLookup.get(normKey(filename)),
+            filename: stripExt(filename),
+            ref: refLookup.get(normKey(filename)) ?? null,
           }));
 
-        setAllItems([...images, ...videos, ...audios]);
+        // sort: matched refs by year first, unmatched last
+        const items = [...images, ...videos, ...audios].sort((a, b) => {
+          const ya = a.ref?.year ?? a.ref?.yearRange?.start ?? 9999;
+          const yb = b.ref?.year ?? b.ref?.yearRange?.start ?? 9999;
+          return ya - yb;
+        });
+
+        setAllItems(items);
       } catch (e) {
         console.error("[archives] fetch error", e);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
-
     void run();
     return () => { cancelled = true; };
   }, [refLookup]);
 
   const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
+    const visible = allItems.filter((item) => !erroredIds.has(item.id));
     const q = query.trim().toLowerCase();
-    if (!q) return allItems;
-    return allItems.filter((item) => {
+    if (!q) return visible;
+    return visible.filter((item) => {
       const hay = [
-        item.ref?.title ?? item.filename,
+        item.ref?.title ?? "",
         item.ref?.creator ?? "",
         item.ref?.type ?? "",
-        item.ref?.location ?? "",
-        item.ref?.year ? String(item.ref.year) : "",
+        String(item.ref?.year ?? ""),
         item.filename,
         item.kind,
-      ]
-        .join(" ")
-        .toLowerCase();
+      ].join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [allItems, query]);
-
-  const [erroredIds, setErroredIds] = useState<Set<string>>(new Set());
+  }, [allItems, erroredIds, query]);
 
   const markErrored = useCallback((id: string) => {
-    setErroredIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
+    setErroredIds((prev) => new Set([...prev, id]));
   }, []);
 
-  const displayedItems = useMemo(
-    () => filtered.filter((item) => !erroredIds.has(item.id)),
-    [filtered, erroredIds]
-  );
-
-  const [selectedId, setSelectedId] = useState<string>("");
-
-  useEffect(() => {
-    const valid = displayedItems.some((f) => f.id === selectedId);
-    if (!valid && displayedItems.length > 0) {
-      setSelectedId(displayedItems[0].id);
-    }
-  }, [displayedItems, selectedId]);
-
-  const selected = useMemo(
-    () => displayedItems.find((f) => f.id === selectedId) ?? displayedItems[0] ?? null,
-    [displayedItems, selectedId]
-  );
-
-  const selectByOffset = useCallback(
-    (delta: number) => {
-      if (!displayedItems.length || !selected) return;
-      const idx = displayedItems.findIndex((f) => f.id === selected.id);
-      const cur = idx >= 0 ? idx : 0;
-      const next = Math.max(0, Math.min(displayedItems.length - 1, cur + delta));
-      const nextId = displayedItems[next]?.id;
-      if (nextId) setSelectedId(nextId);
-    },
-    [displayedItems, selected]
-  );
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      const target = e.target;
-      const isTyping =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        (target instanceof HTMLElement && target.isContentEditable);
-      if (isTyping) return;
-      if (e.key === "ArrowUp") { e.preventDefault(); selectByOffset(-1); }
-      else if (e.key === "ArrowDown") { e.preventDefault(); selectByOffset(1); }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectByOffset]);
+  function toggle(id: string) {
+    setSelectedId((prev) => (prev === id ? null : id));
+  }
 
   return (
-    <main className="bg-white text-zinc-900">
-      <div className="mx-auto max-w-[1500px] px-6 py-10">
-        <header className="mb-6">
-          <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-            archives
+    <main className="bg-white text-zinc-900 min-h-screen">
+      <div className="mx-auto max-w-[1200px] px-6 py-10">
+
+        {/* Page header */}
+        <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/40">
+              archives
+            </div>
+            <h1 className="gertrude mt-1 text-[32px] leading-tight">
+              bibliothèque
+            </h1>
           </div>
-          <h1 className="mt-2 gertrude text-3xl font-medium">bibliothèque</h1>
-          <p className="mt-2 gertrude max-w-2xl text-sm text-zinc-600">
-            sélectionner un média pour l'afficher.
-          </p>
-        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,520px)_1fr] gap-0 border border-zinc-200">
-          {/* list */}
-          <aside className="border-b lg:border-b-0 lg:border-r border-zinc-200">
-            <div className="p-3 border-b border-zinc-200 bg-white sticky top-0 z-10">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="rechercher (titre, auteur, type, année…)"
-                className="w-full border border-zinc-300 px-3 py-2 text-sm bg-white"
-              />
-              <div className="mt-2 mono text-[11px] uppercase tracking-widest text-zinc-600">
-                {loading ? "loading…" : `${displayedItems.length} médias`}
-              </div>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="rechercher…"
+            className="gertrude w-full md:w-72 border-b border-black/30 bg-transparent py-1.5 text-[15px] placeholder:text-black/30 focus:outline-none focus:border-black"
+          />
+        </div>
+
+        {/* Column headers */}
+        <div
+          className="mono text-[11px] uppercase tracking-[0.18em] text-black/35 pb-3"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "7rem 1fr 14rem",
+            gap: "0 1rem",
+            borderBottom: "1px solid rgba(0,0,0,0.1)",
+          }}
+        >
+          <span>↓ année</span>
+          <span>↓ titre</span>
+          <span>↓ auteur·ice</span>
+        </div>
+
+        {/* Rows */}
+        {loading && (
+          <div className="py-10 mono text-[11px] uppercase tracking-[0.18em] text-black/30">
+            chargement…
+          </div>
+        )}
+
+        {filtered.map((item) => {
+          const active = selectedId === item.id;
+          const r = item.ref;
+          const title = r?.title ?? "Connecter la référence";
+          const year = r ? formatYear(r) : "—";
+          const creator = r?.creator ?? "";
+          const isUnlinked = !r;
+
+          return (
+            <div key={item.id} id={`item-${item.id}`}>
+              <button
+                type="button"
+                onClick={() => toggle(item.id)}
+                className="w-full text-left py-3 hover:opacity-70 transition-opacity"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "7rem 1fr 14rem",
+                  gap: "0 1rem",
+                  alignItems: "baseline",
+                  borderBottom: "1px solid rgba(0,0,0,0.07)",
+                  color: active ? ACCENT : "#111",
+                }}
+              >
+                <span className="gertrude text-[15px] shrink-0">
+                  {year}
+                </span>
+
+                <span
+                  className="gertrude text-[15px] leading-snug"
+                  style={isUnlinked && !active ? { color: "#aaa" } : undefined}
+                >
+                  {title}
+                </span>
+
+                <span
+                  className="gertrude text-[15px] leading-snug"
+                  style={{ color: active ? ACCENT : "#555" }}
+                >
+                  {creator}
+                </span>
+              </button>
+
+              {active && (
+                <ErrorBoundaryItem id={item.id} onError={markErrored}>
+                  <ExpandedContent item={item} />
+                </ErrorBoundaryItem>
+              )}
             </div>
+          );
+        })}
 
-            <div className="max-h-[calc(100vh-260px)] overflow-auto">
-              {displayedItems.map((item) => {
-                const active = item.id === selected?.id;
-                const label = item.ref?.title ?? item.filename;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedId(item.id)}
-                    className={[
-                      "w-full text-left px-4 py-2 border-b border-zinc-200",
-                      active ? "bg-zinc-900 text-white" : "bg-white hover:bg-zinc-50",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <div className="gertrude text-[13px] leading-snug truncate">{label}</div>
-                      {item.ref?.year ? (
-                        <div className={["mono text-[11px] uppercase tracking-widest shrink-0", active ? "text-white/80" : "text-zinc-500"].join(" ")}>
-                          {formatYear(item.ref)}
-                        </div>
-                      ) : null}
-                    </div>
+        {!loading && filtered.length === 0 && (
+          <div className="py-10 gertrude text-[15px] text-black/40">
+            aucun résultat
+          </div>
+        )}
 
-                    {item.ref?.creator ? (
-                      <div className={["gertrude mt-1 text-[12px]", active ? "text-white/70" : "text-zinc-600"].join(" ")}>
-                        {item.ref.creator}
-                      </div>
-                    ) : null}
-
-                    <div className={["mt-1 mono text-[10px] uppercase tracking-widest", active ? "text-white/60" : "text-zinc-500"].join(" ")}>
-                      {item.ref ? prettyType(item.ref.type) : item.kind} · {item.kind}
-                    </div>
-                  </button>
-                );
-              })}
-
-              {!loading && displayedItems.length === 0 ? (
-                <div className="p-4 text-sm text-zinc-500">aucun résultat</div>
-              ) : null}
-            </div>
-          </aside>
-
-          {/* media */}
-          <section className="border-b lg:border-b-0 lg:border-r border-zinc-200 bg-white">
-            <div className="h-[520px] w-full bg-zinc-100">
-              {selected ? (
-                <MediaDisplay
-                  key={selected.id}
-                  item={selected}
-                  onError={() => markErrored(selected.id)}
-                />
-              ) : null}
-            </div>
-          </section>
-
-          {/* info */}
-          <section className="bg-white">
-            {selected ? (
-              <div className="p-6">
-                {selected.ref ? (
-                  <>
-                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                      {prettyType(selected.ref.type)} · {formatYear(selected.ref)}
-                      {selected.ref.location ? ` · ${selected.ref.location}` : ""}
-                    </div>
-
-                    <h2 className="mt-3 gertrude text-[22px] leading-snug font-medium">
-                      {selected.ref.title}
-                    </h2>
-
-                    {selected.ref.creator ? (
-                      <div className="mt-2 gertrude text-sm text-zinc-700">{selected.ref.creator}</div>
-                    ) : null}
-
-                    <div className="mt-6 grid grid-cols-1 border border-zinc-200">
-                      <div className="p-4 border-b border-zinc-200">
-                        <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">type</div>
-                        <div className="mt-2 gertrude text-sm">{prettyType(selected.ref.type)}</div>
-                      </div>
-                      <div className="p-4 border-b border-zinc-200">
-                        <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">année</div>
-                        <div className="mt-2 gertrude text-sm">{formatYear(selected.ref)}</div>
-                      </div>
-                      {selected.ref.location ? (
-                        <div className="p-4 border-b border-zinc-200">
-                          <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">lieu</div>
-                          <div className="mt-2 gertrude text-sm">{selected.ref.location}</div>
-                        </div>
-                      ) : null}
-                      {selected.ref.notes?.trim() ? (
-                        <div className="p-4 border-b border-zinc-200">
-                          <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">notes</div>
-                          <div className="mt-2 gertrude text-sm leading-relaxed text-zinc-700">{selected.ref.notes}</div>
-                        </div>
-                      ) : null}
-                      {(selected.ref.sourceLabel || selected.ref.sourceUrl) ? (
-                        <div className="p-4">
-                          <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">source</div>
-                          <div className="mt-2 gertrude text-sm">
-                            {selected.ref.sourceUrl ? (
-                              <a className="underline" href={selected.ref.sourceUrl} target="_blank" rel="noreferrer">
-                                {selected.ref.sourceLabel ?? selected.ref.sourceUrl}
-                              </a>
-                            ) : selected.ref.sourceLabel}
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
-                      {selected.kind}
-                    </div>
-                    <h2 className="mt-3 gertrude text-[22px] leading-snug font-medium break-all">
-                      {selected.filename}
-                    </h2>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="p-6 text-zinc-600">aucune sélection</div>
-            )}
-          </section>
+        <div className="mt-4 mono text-[11px] uppercase tracking-[0.18em] text-black/30">
+          {loading ? "" : `${filtered.length} média${filtered.length !== 1 ? "s" : ""}`}
         </div>
       </div>
     </main>
   );
+}
+
+// simple error boundary wrapper to hide broken media items
+import React from "react";
+
+class ErrorBoundaryItem extends React.Component<
+  { id: string; onError: (id: string) => void; children: React.ReactNode },
+  { errored: boolean }
+> {
+  constructor(props: { id: string; onError: (id: string) => void; children: React.ReactNode }) {
+    super(props);
+    this.state = { errored: false };
+  }
+  componentDidCatch() {
+    this.props.onError(this.props.id);
+    this.setState({ errored: true });
+  }
+  render() {
+    if (this.state.errored) return null;
+    return this.props.children;
+  }
 }
