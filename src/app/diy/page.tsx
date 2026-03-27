@@ -240,8 +240,11 @@ function makeScatterTiles(params: {
 function getCanvasRectInStage(params: { stageW: number; topOffset: number }) {
   const { stageW, topOffset } = params;
 
-  const canvasW = Math.min(900, Math.max(560, Math.floor(stageW * 0.66)));
-  const canvasH = 460;
+  const isMobile = stageW < 640;
+  const canvasW = isMobile
+    ? Math.max(280, stageW - 16)
+    : Math.min(900, Math.max(560, Math.floor(stageW * 0.66)));
+  const canvasH = isMobile ? Math.round(canvasW * 0.7) : 460;
 
   const canvasX = Math.floor((stageW - canvasW) / 2);
   const canvasY = topOffset;
@@ -747,10 +750,10 @@ export default function DIYPage() {
     return () => ro.disconnect();
   }, []);
 
-  const topOffset = 78;
+  const topOffset = stageSize.w > 0 && stageSize.w < 640 ? 20 : 78;
   const rects = useMemo(() => {
     return getCanvasRectInStage({ stageW: stageSize.w || 1200, topOffset });
-  }, [stageSize.w]);
+  }, [stageSize.w, topOffset]);
 
   const poolFiles = useMemo(() => {
     const rand = mulberry32(poolSeed * 999);
@@ -1311,7 +1314,7 @@ export default function DIYPage() {
             </div>
 
             <div className="col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
-              <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
+              <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
                 <button
                   className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
                   onClick={refresh}
@@ -1393,7 +1396,7 @@ export default function DIYPage() {
           <div className="mt-4">
             <div
               ref={stageRef}
-              className="relative w-full"
+              className="relative w-full overflow-hidden"
               style={{
                 height: rects.totalH + 16,
                 overscrollBehaviorX: "none",
@@ -1597,7 +1600,7 @@ export default function DIYPage() {
                                 controls
                                 preload="none"
                                 src={f.url}
-                                className="w-[260px]"
+                                className="w-[120px] sm:w-[260px]"
                                 onError={(e) => {
                                   (e.currentTarget as HTMLElement).style.display =
                                     "none";

@@ -207,7 +207,7 @@ function CreationCard({ creation }: { creation: Creation }) {
             playsInline
             preload="metadata"
             className="w-full object-contain"
-            style={{ display: "block", maxHeight: "520px" }}
+            style={{ display: "block", maxHeight: "clamp(200px, 60vw, 520px)" }}
             onError={() => setErrored(true)}
           />
         ) : (
@@ -215,7 +215,7 @@ function CreationCard({ creation }: { creation: Creation }) {
             src={creation.url}
             alt={creation.name || "création"}
             className="w-full object-contain"
-            style={{ display: "block", maxHeight: "520px" }}
+            style={{ display: "block", maxHeight: "clamp(200px, 60vw, 520px)" }}
             onError={() => setErrored(true)}
           />
         )}
