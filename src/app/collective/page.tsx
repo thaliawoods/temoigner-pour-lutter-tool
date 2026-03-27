@@ -37,13 +37,13 @@ export default function CollectivePage() {
           collective
         </div>
 
-        <h1 className="gertrude text-[52px] md:text-[72px] leading-[1.05] tracking-[-0.01em] text-black mb-10">
+        <h1 className="gertrude text-[36px] sm:text-[52px] md:text-[72px] leading-[1.05] tracking-[-0.01em] text-black mb-10">
           Ely &amp; Marion
           <br />
           Collective
         </h1>
 
-        <p className="gertrude text-[19px] md:text-[21px] leading-[1.6] text-black/80 max-w-[52ch]">
+        <p className="gertrude text-[16px] sm:text-[19px] md:text-[21px] leading-[1.6] text-black/80 max-w-[52ch]">
           Le duo Ely &amp; Marion est né avec l'intention de créer un outil
           de diffusion des luttes féministes. La collective est composée de
           deux jeunes artistes, Elyette Gauthier et Marion Serclérat,

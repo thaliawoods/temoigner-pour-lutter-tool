@@ -5,9 +5,16 @@ import { getAllReferences } from "@/lib/references";
 import { buildPublicUrl } from "@/lib/public-url";
 import type { TPLReference } from "@/lib/schema";
 
-const ACCENT = "#3bff6e";
 const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
 const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
+
+const gradientText = {
+  backgroundImage: "linear-gradient(135deg, #ef444d 0%, #ff72c2 100%)",
+  WebkitBackgroundClip: "text",
+  WebkitTextFillColor: "transparent",
+  backgroundClip: "text",
+  color: "transparent",
+};
 
 // ── types ────────────────────────────────────────────────────────────────────
 
@@ -125,8 +132,7 @@ function ExpandedContent({ item }: { item: ListItem }) {
 
   return (
     <div
-      className="pb-8 pt-4"
-      style={{ paddingLeft: "calc(7rem + 1rem)" }}
+      className="pb-8 pt-4 pl-4 sm:pl-[calc(7rem+1rem)]"
     >
       {/* Media */}
       <div className="mb-4 max-w-[640px]">
@@ -319,15 +325,16 @@ export default function ArchivesReader() {
           className="mono text-[11px] uppercase tracking-[0.18em] text-black/35 pb-3"
           style={{
             display: "grid",
-            gridTemplateColumns: "7rem 1fr 14rem",
+            gridTemplateColumns: "var(--archives-cols, 7rem 1fr 14rem)",
             gap: "0 1rem",
             borderBottom: "1px solid rgba(0,0,0,0.1)",
           }}
         >
           <span>↓ année</span>
           <span>↓ titre</span>
-          <span>↓ auteur·ice</span>
+          <span className="hidden sm:block">↓ auteur·ice</span>
         </div>
+        <style>{`@media (max-width: 639px) { :root { --archives-cols: 5rem 1fr; } }`}</style>
 
         {/* Rows */}
         {loading && (
@@ -352,27 +359,29 @@ export default function ArchivesReader() {
                 className="w-full text-left py-3 hover:opacity-70 transition-opacity"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "7rem 1fr 14rem",
+                  gridTemplateColumns: "var(--archives-cols, 7rem 1fr 14rem)",
                   gap: "0 1rem",
                   alignItems: "baseline",
                   borderBottom: "1px solid rgba(0,0,0,0.07)",
-                  color: active ? ACCENT : "#111",
                 }}
               >
-                <span className="gertrude text-[15px] shrink-0">
+                <span
+                  className="gertrude text-[15px] shrink-0"
+                  style={active ? gradientText : { color: "#111" }}
+                >
                   {year}
                 </span>
 
                 <span
                   className="gertrude text-[15px] leading-snug"
-                  style={isUnlinked && !active ? { color: "#aaa" } : undefined}
+                  style={active ? gradientText : (isUnlinked ? { color: "#aaa" } : { color: "#111" })}
                 >
                   {title}
                 </span>
 
                 <span
-                  className="gertrude text-[15px] leading-snug"
-                  style={{ color: active ? ACCENT : "#555" }}
+                  className="gertrude text-[15px] leading-snug hidden sm:block"
+                  style={active ? gradientText : { color: "#555" }}
                 >
                   {creator}
                 </span>

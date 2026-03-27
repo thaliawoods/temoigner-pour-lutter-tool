@@ -395,12 +395,12 @@ export default function HomePage() {
       {AMBIENT_SRC && (
         <audio ref={audioRef} src={AMBIENT_SRC} loop preload="none" />
       )}
-      <section className="px-6 pt-10 pb-6 max-w-[1400px]">
+      <section className="px-4 sm:px-6 pt-6 sm:pt-10 pb-4 sm:pb-6 max-w-[1400px]">
         <div className="mono text-[11px] tracking-[0.22em] uppercase opacity-60">
           ELY &amp; MARION COLLECTIVE
         </div>
 
-        <h1 className="mt-3 gertrude text-[56px] leading-[1.02] tracking-[-0.02em]">
+        <h1 className="mt-3 gertrude text-[28px] sm:text-[42px] lg:text-[56px] leading-[1.02] tracking-[-0.02em]">
           Témoigner pour lutter
         </h1>
 
@@ -419,7 +419,7 @@ export default function HomePage() {
       <section className="relative w-full border-y border-black/10">
         <div
           ref={containerRef}
-          className="relative h-[620px] w-full overflow-hidden bg-white touch-none"
+          className="relative h-[420px] sm:h-[520px] md:h-[620px] w-full overflow-hidden bg-white touch-none"
           onPointerDown={onCanvasPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -502,7 +502,7 @@ export default function HomePage() {
               e.stopPropagation();
               resetView();
             }}
-            className="absolute right-8 bottom-8 z-50 mono text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-5 py-3 hover:bg-black/5 transition-colors"
+            className="absolute right-3 bottom-3 sm:right-8 sm:bottom-8 z-50 mono text-[10px] sm:text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-3 sm:px-5 py-2 sm:py-3 hover:bg-black/5 transition-colors"
           >
             Reset view
           </button>
@@ -515,7 +515,7 @@ export default function HomePage() {
                 e.stopPropagation();
                 toggleAudio();
               }}
-              className="absolute left-8 bottom-8 z-50 mono text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-5 py-3 hover:bg-black/5 transition-colors"
+              className="absolute left-3 bottom-3 sm:left-8 sm:bottom-8 z-50 mono text-[10px] sm:text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-3 sm:px-5 py-2 sm:py-3 hover:bg-black/5 transition-colors"
             >
               {audioPlaying ? "◼ son" : "▶ son"}
             </button>
