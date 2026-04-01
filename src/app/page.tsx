@@ -396,7 +396,7 @@ export default function HomePage() {
         <audio ref={audioRef} src={AMBIENT_SRC} loop preload="none" />
       )}
       <section className="px-4 sm:px-6 pt-6 sm:pt-10 pb-4 sm:pb-6 max-w-[1400px]">
-        <div className="mono text-[11px] tracking-[0.22em] uppercase opacity-60">
+        <div className="mono text-[11px] tracking-[0.22em] uppercase text-black/50">
           ELY &amp; MARION COLLECTIVE
         </div>
 

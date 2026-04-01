@@ -2,39 +2,48 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 export type HeaderVariant = "overlay" | "bar";
+
+const navLinks = [
+  { href: "/diy", label: "Do It Yourself" },
+  { href: "/archives", label: "Archives" },
+  { href: "/performances", label: "Performances" },
+  { href: "/creations", label: "Vos Créations" },
+  { href: "/collective", label: "Collective" },
+];
 
 function NavItem({
   href,
   label,
-  align = "left",
   active,
   className = "",
 }: {
   href: string;
   label: string;
-  align?: "left" | "center" | "right";
   active?: boolean;
   className?: string;
 }) {
   const base =
     "gertrude uppercase transition-opacity hover:opacity-70 " +
-    "text-[10px] sm:text-[11px] tracking-[0.22em] sm:tracking-widest";
-  const underline = active ? "underline underline-offset-4" : "";
-  const justify =
-    align === "left"
-      ? "justify-start"
-      : align === "center"
-      ? "justify-center"
-      : "justify-end";
+    "text-[10px] sm:text-[11px] tracking-[0.18em] sm:tracking-[0.22em]";
 
   return (
-    <div className={`flex ${justify}`}>
-      <Link href={href} className={`${base} ${underline} ${className}`}>
-        {label}
-      </Link>
-    </div>
+    <Link
+      href={href}
+      className={`${base} ${className}`}
+      style={
+        active
+          ? {
+              borderBottom: "1.5px solid black",
+              paddingBottom: "3px",
+            }
+          : undefined
+      }
+    >
+      {label}
+    </Link>
   );
 }
 
@@ -44,219 +53,89 @@ export default function SiteHeader({
   variant?: HeaderVariant;
 }) {
   const path = usePathname();
-  const isHome = path === "/";
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  const isHome = path === "/";
   const isActive = (href: string) => path === href;
 
-  if (variant === "overlay") {
-    return (
-      <header className="absolute inset-x-0 top-0 z-50 text-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 sm:py-6">
-          <div className="sm:hidden">
-            <div className="flex items-start justify-between gap-4">
-              <NavItem
-                href="/"
-                label="Témoigner pour lutter"
-                align="left"
-                active={isHome}
-                className="text-white leading-tight"
-              />
-            </div>
+  const isOverlay = variant === "overlay";
+  const headerClass = isOverlay
+    ? "absolute inset-x-0 top-0 z-50 text-white"
+    : "w-full border-b border-zinc-200 bg-white text-black";
 
-            <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2">
-              <NavItem
-                href="/diy"
-                label="Do It Yourself"
-                align="center"
-                active={isActive("/diy")}
-                className="text-white whitespace-nowrap"
-              />
-              <NavItem
-                href="/archives"
-                label="Archives"
-                align="center"
-                active={isActive("/archives")}
-                className="text-white whitespace-nowrap"
-              />
-              <NavItem
-                href="/performances"
-                label="Performances"
-                align="center"
-                active={isActive("/performances")}
-                className="text-white whitespace-nowrap"
-              />
-              <NavItem
-                href="/creations"
-                label="Vos Créations"
-                align="center"
-                active={isActive("/creations")}
-                className="text-white whitespace-nowrap"
-              />
-              <NavItem
-                href="/collective"
-                label="Collective"
-                align="center"
-                active={isActive("/collective")}
-                className="text-white whitespace-nowrap"
-              />
-            </div>
-          </div>
+  const innerClass = isOverlay
+    ? "mx-auto max-w-6xl px-4 sm:px-6 py-5 sm:py-6"
+    : "mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-4";
 
-          <div className="hidden sm:block">
-            <div className="grid grid-cols-3 items-start gap-4">
-              <NavItem
-                href="/collective"
-                label="Ely & Marion Collective"
-                align="left"
-                active={isActive("/collective")}
-                className="text-white"
-              />
-
-              <NavItem
-                href="/"
-                label="Témoigner pour lutter"
-                align="center"
-                active={isHome}
-                className="text-white"
-              />
-
-              <div className="flex justify-end gap-6">
-                <NavItem
-                  href="/diy"
-                  label="Do It Yourself"
-                  align="right"
-                  active={isActive("/diy")}
-                  className="text-white whitespace-nowrap"
-                />
-                <NavItem
-                  href="/archives"
-                  label="Archives"
-                  align="right"
-                  active={isActive("/archives")}
-                  className="text-white whitespace-nowrap"
-                />
-                <NavItem
-                  href="/performances"
-                  label="Performances"
-                  align="right"
-                  active={isActive("/performances")}
-                  className="text-white whitespace-nowrap"
-                />
-                <NavItem
-                  href="/creations"
-                  label="Vos Créations"
-                  align="right"
-                  active={isActive("/creations")}
-                  className="text-white whitespace-nowrap"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-    );
-  }
+  const linkColorClass = isOverlay ? "text-white" : "text-black";
+  const buttonColorClass = isOverlay
+    ? "text-white border-white/30"
+    : "text-black border-zinc-300";
 
   return (
-    <header className="w-full border-b border-zinc-200 bg-white">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-4">
-        <div className="sm:hidden">
-          <div className="flex items-start justify-between gap-4">
+    <header className={headerClass}>
+      <div className={innerClass}>
+        {/* Mobile */}
+        <div className="md:hidden">
+          <div className="flex items-center justify-between gap-4">
             <NavItem
               href="/"
               label="Témoigner pour lutter"
-              align="left"
               active={isHome}
-              className="leading-tight"
+              className={`${linkColorClass} leading-tight max-w-[75%]`}
             />
+
+            <button
+              type="button"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+              className={`shrink-0 rounded border px-3 py-2 text-[10px] uppercase tracking-[0.2em] ${buttonColorClass}`}
+            >
+              {menuOpen ? "Close" : "Menu"}
+            </button>
           </div>
 
-          <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <NavItem
-              href="/diy"
-              label="Do It Yourself"
-              align="center"
-              active={isActive("/diy")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/archives"
-              label="Archives"
-              align="center"
-              active={isActive("/archives")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/performances"
-              label="Performances"
-              align="center"
-              active={isActive("/performances")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/creations"
-              label="Vos Créations"
-              align="center"
-              active={isActive("/creations")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/collective"
-              label="Collective"
-              align="center"
-              active={isActive("/collective")}
-              className="whitespace-nowrap"
-            />
-          </div>
+          {menuOpen && (
+            <nav className="mt-4 flex flex-col gap-3 pb-2">
+              {navLinks.map((item) => (
+                <span key={item.href} onClick={() => setMenuOpen(false)}>
+                  <NavItem
+                    href={item.href}
+                    label={item.label}
+                    active={isActive(item.href)}
+                    className={`${linkColorClass} block w-fit`}
+                  />
+                </span>
+              ))}
+            </nav>
+          )}
         </div>
 
-        <div className="hidden sm:grid grid-cols-3 items-center gap-4">
-          <NavItem
-            href="/"
-            label="témoigner pour lutter"
-            align="left"
-            active={isHome}
-          />
-
-          <div className="flex justify-center gap-6">
+        {/* Desktop */}
+        <div className="hidden md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-6">
+          <div className="min-w-0">
             <NavItem
-              href="/diy"
-              label="do it yourself"
-              align="center"
-              active={isActive("/diy")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/archives"
-              label="archives"
-              align="center"
-              active={isActive("/archives")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/performances"
-              label="performances"
-              align="center"
-              active={isActive("/performances")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/creations"
-              label="vos créations"
-              align="center"
-              active={isActive("/creations")}
-              className="whitespace-nowrap"
-            />
-            <NavItem
-              href="/collective"
-              label="collective"
-              align="center"
-              active={isActive("/collective")}
-              className="whitespace-nowrap"
+              href="/"
+              label="Témoigner pour lutter"
+              active={isHome}
+              className={`${linkColorClass} block w-fit`}
             />
           </div>
 
-          <div className="flex justify-end" />
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            {navLinks.map((item) => (
+              <NavItem
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                active={isActive(item.href)}
+                className={`${linkColorClass}`}
+              />
+            ))}
+          </nav>
+
+          <div />
         </div>
       </div>
     </header>

@@ -40,7 +40,7 @@ export default function PerformancesPage() {
   return (
     <main className="min-h-screen bg-white text-zinc-900">
       <div className="mx-auto max-w-6xl px-6 py-10">
-        <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+        <div className="mono text-[11px] uppercase tracking-widest text-black/50">
           performances
         </div>
         <h1 className="mt-2 gertrude text-3xl font-medium">extraits</h1>
