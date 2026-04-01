@@ -7,9 +7,9 @@ import { useState } from "react";
 export type HeaderVariant = "overlay" | "bar";
 
 const navLinks = [
-  { href: "/diy", label: "Do It Yourself" },
   { href: "/archives", label: "Archives" },
   { href: "/performances", label: "Performances" },
+  { href: "/diy", label: "Do It Yourself" },
   { href: "/creations", label: "Vos Créations" },
   { href: "/collective", label: "Collective" },
 ];

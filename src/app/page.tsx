@@ -82,7 +82,7 @@ function fitViewToTiles(tiles: Tile[], viewportW: number, viewportH: number): Vi
   const scaleY = (viewportH - pad * 2) / contentH;
 
   const rawScale = Math.min(scaleX, scaleY) * 1.34;
-  const scale = clamp(rawScale, 0.35, 2.2);
+  const scale = clamp(rawScale, 0.85, 2.2);
 
   const x = (viewportW - contentW * scale) / 2 - minX * scale;
   const y = (viewportH - contentH * scale) / 2 - minY * scale;
@@ -199,36 +199,89 @@ export default function HomePage() {
   const didInitViewRef = useRef(false);
   const defaultViewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
 
+  const VISIBLE_COUNT = 18;
+  const mediaPoolRef = useRef<MediaItem[]>([]);
+  const poolIndexRef = useRef(0);
+
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || media.length === 0) return;
 
-    const rebuild = () => {
-      const rect = el.getBoundingClientRect();
-      const nextTiles = makeTiles(media, rect.width, rect.height);
-      setTiles(nextTiles);
+    // Shuffle media for the pool
+    const shuffled = [...media].sort(() => Math.random() - 0.5);
+    mediaPoolRef.current = shuffled;
+    poolIndexRef.current = VISIBLE_COUNT;
 
-      if (nextTiles.length === 0) return;
+    const rect = el.getBoundingClientRect();
+    const initial = shuffled.slice(0, VISIBLE_COUNT);
+    const nextTiles = makeTiles(initial, rect.width, rect.height);
+    setTiles(nextTiles);
 
-      const fitted = fitViewToTiles(nextTiles, rect.width, rect.height);
-      defaultViewRef.current = fitted;
+    if (nextTiles.length === 0) return;
 
-      if (!didInitViewRef.current) {
-        setView(fitted);
-        didInitViewRef.current = true;
-      }
-    };
+    const fitted = fitViewToTiles(nextTiles, rect.width, rect.height);
+    defaultViewRef.current = fitted;
 
-    rebuild();
+    if (!didInitViewRef.current) {
+      setView(fitted);
+      didInitViewRef.current = true;
+    }
 
-    const ro = new ResizeObserver(() => rebuild());
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect();
+      setTiles((prev) => {
+        const currentMedia = prev.map((t) => t.media);
+        const rebuilt = makeTiles(currentMedia, r.width, r.height);
+        const f = fitViewToTiles(rebuilt, r.width, r.height);
+        defaultViewRef.current = f;
+        return rebuilt;
+      });
+    });
     ro.observe(el);
 
     return () => ro.disconnect();
   }, [media]);
 
+  // Cycle tiles: swap one tile every 2.5 seconds
   useEffect(() => {
-    const MAX_PRELOAD = 120;
+    if (media.length <= VISIBLE_COUNT) return;
+
+    const interval = setInterval(() => {
+      // Swap 2 tiles each tick for faster cycling
+      const pool = mediaPoolRef.current;
+      if (pool.length === 0) return;
+
+      setTiles((prev) => {
+        if (prev.length === 0) return prev;
+
+        // Pick a random tile to replace
+        const replaceIdx = Math.floor(Math.random() * prev.length);
+        const nextMedia = pool[poolIndexRef.current % pool.length];
+        poolIndexRef.current++;
+
+        // Reset loaded state so new image fades in
+        setLoadedTileIds((loaded) => {
+          const next = new Set(loaded);
+          next.delete(prev[replaceIdx].id);
+          return next;
+        });
+
+        return prev.map((t, i) => {
+          if (i !== replaceIdx) return t;
+          return {
+            ...t,
+            id: `image-${Date.now()}-${nextMedia.path}`,
+            media: nextMedia,
+          };
+        });
+      });
+    }, 800);
+
+    return () => clearInterval(interval);
+  }, [media]);
+
+  useEffect(() => {
+    const MAX_PRELOAD = 60;
     for (const m of media.slice(0, MAX_PRELOAD)) preloadPublicImage(m.path);
   }, [media]);
 
@@ -335,7 +388,14 @@ export default function HomePage() {
       const p = panRef.current;
       const dx = e.clientX - p.startX;
       const dy = e.clientY - p.startY;
-      setView((v) => ({ ...v, x: p.viewX + dx, y: p.viewY + dy }));
+      const el = containerRef.current;
+      const rect = el?.getBoundingClientRect();
+      const vw = rect?.width ?? 1200;
+      const vh = rect?.height ?? 600;
+      const margin = 400;
+      const nx = clamp(p.viewX + dx, -margin * view.scale, vw + margin * view.scale);
+      const ny = clamp(p.viewY + dy, -margin * view.scale, vh + margin * view.scale);
+      setView((v) => ({ ...v, x: nx, y: ny }));
     }
   }
 
@@ -354,7 +414,7 @@ export default function HomePage() {
     e.preventDefault();
 
     const delta = -e.deltaY;
-    const nextScale = clamp(view.scale + delta * 0.001, 0.35, 2.2);
+    const nextScale = clamp(view.scale + delta * 0.001, 0.85, 2.2);
 
     const el = containerRef.current;
     if (!el) {
@@ -372,7 +432,11 @@ export default function HomePage() {
     const nextX = cx - worldX * nextScale;
     const nextY = cy - worldY * nextScale;
 
-    setView({ x: nextX, y: nextY, scale: nextScale });
+    const r2 = el.getBoundingClientRect();
+    const margin = 400;
+    const clampedX = clamp(nextX, -margin * nextScale, r2.width + margin * nextScale);
+    const clampedY = clamp(nextY, -margin * nextScale, r2.height + margin * nextScale);
+    setView({ x: clampedX, y: clampedY, scale: nextScale });
   }
 
   function resetView() {
@@ -423,7 +487,6 @@ export default function HomePage() {
           onPointerDown={onCanvasPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onWheel={onWheel}
         >
           <div
             className="absolute inset-0"
