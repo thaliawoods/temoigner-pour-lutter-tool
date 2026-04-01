@@ -528,53 +528,16 @@ function WaveMini({ seed = 1 }: { seed?: number }) {
 // ─── Tutorial ─────────────────────────────────────────────────────────────────
 
 function Tutorial({ onDismiss }: { onDismiss: () => void }) {
-  const steps = [
-    {
-      num: "01",
-      title: "Glisser des visuels",
-      text: "Glissez les images et vidéos depuis la galerie vers le canvas central. Sur mobile, appuyez sur + ajouter sous chaque média.",
-    },
-    {
-      num: "02",
-      title: "Ajouter du son",
-      text: "Dans la console audio, écoutez les pistes puis glissez-les vers le canvas. L\u2019audio apparaît en bas avec ses contrôles de lecture.",
-    },
-    {
-      num: "03",
-      title: "Composer",
-      text: "Déplacez et redimensionnez les éléments sur le canvas. Sélectionnez un élément pour le redimensionner ou le supprimer.",
-    },
-    {
-      num: "04",
-      title: "Exporter",
-      text: "Exportez votre création en pdf (recto + références), en vidéo avec le son, ou partagez-la sur la page Créations.",
-    },
-  ];
-
   return (
-    <div className="bg-white">
-      <div className="flex items-center justify-between pb-4 border-b border-dashed border-black/15">
-        <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/40">
-          comment ça marche
-        </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="mono text-[10px] uppercase tracking-[0.22em] text-black/30 hover:text-black transition-colors"
-        >
-          fermer ×
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-y-2 pt-3">
-        {steps.map((step) => (
-          <div key={step.num} className="flex items-baseline gap-2">
-            <span className="mono text-[10px] text-black/20 shrink-0">{step.num}</span>
-            <span className="gertrude text-[13px] text-black/70 shrink-0">{step.title}</span>
-            <span className="gertrude text-[12px] text-black/35 hidden sm:inline">{step.text}</span>
-          </div>
-        ))}
-      </div>
+    <div className="mono text-[12px] opacity-50 leading-relaxed lg:whitespace-nowrap">
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="opacity-50 hover:opacity-100 transition-opacity mr-1"
+      >
+        ×
+      </button>
+      <span className="opacity-70">aide :</span> glisser les visuels vers le canvas — ajouter du son depuis la console — redimensionner et composer — exporter en pdf, vidéo ou partager
     </div>
   );
 }
@@ -1521,7 +1484,7 @@ export default function DIYPage() {
 
 
   const mobileAllMedia = useMemo(() => {
-    return [...poolFiles, ...audioList];
+    return [...poolFiles];
   }, [poolFiles, audioList]);
 
   return (
@@ -1895,8 +1858,8 @@ export default function DIYPage() {
                       <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
                         {ghost.kind.toUpperCase()}
                       </div>
-                      <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-                        {trunc(filesById.get(ghost.fileId)?.name ?? "—", 48)}
+                      <div className="mt-2 gertrude text-[13px] leading-snug text-zinc-900">
+                        {trunc((() => { const f = filesById.get(ghost.fileId); return f ? displayName(f) : "—"; })(), 48)}
                       </div>
                     </div>
                     {ghost.kind === "audio" ? <WaveMini seed={77} /> : null}
@@ -1906,9 +1869,64 @@ export default function DIYPage() {
             </div>
           </div>
 
-          {/* Mobile: media gallery + audio below the canvas */}
+          {/* Mobile: audio console + media gallery below the canvas */}
           {isMobile && (
-            <div className="mt-6 space-y-6">
+            <div className="mt-4 space-y-6">
+              {/* Audio console — scrollable */}
+              <div className="border border-zinc-200 bg-white">
+                <div className="p-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                      audio console
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <WaveMini seed={42} />
+                      <WaveMini seed={99} />
+                    </div>
+                  </div>
+
+                  <div className="overflow-auto max-h-[200px] border border-zinc-200">
+                    <div className="divide-y divide-zinc-200">
+                      {audioList.map((f) => (
+                        <div
+                          key={f.id}
+                          className="flex items-center justify-between gap-3 px-3 py-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="gertrude text-[12px] text-zinc-900 truncate">
+                              {displayName(f)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <audio
+                              controls
+                              preload="none"
+                              src={f.url}
+                              className="w-[140px]"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = "none";
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="border border-zinc-300 bg-white px-2 py-1 mono text-[9px] uppercase tracking-widest shrink-0"
+                              onClick={() => addToCanvas(f.id, "audio")}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {!loading && audioList.length === 0 && (
+                        <div className="p-3 mono text-[11px] uppercase tracking-widest text-zinc-400">
+                          aucun audio
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Visual media grid */}
               <div>
                 <div className="flex items-center justify-between mb-3">

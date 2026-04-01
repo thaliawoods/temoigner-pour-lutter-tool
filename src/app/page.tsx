@@ -474,8 +474,7 @@ export default function HomePage() {
           </div>
 
           <div className="mono text-[12px] opacity-50 leading-relaxed max-w-[900px]">
-            <span className="opacity-70">tips:</span> drag image - grab bottom right corner to resize - drag
-            background to pan - scroll to zoom
+            <span className="opacity-70">tips :</span> glisser une image pour la déplacer — attraper le coin bas droit pour la redimensionner
           </div>
         </div>
       </section>
@@ -557,18 +556,6 @@ export default function HomePage() {
               );
             })}
           </div>
-
-          <button
-            type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              resetView();
-            }}
-            className="absolute right-3 bottom-3 sm:right-8 sm:bottom-8 z-50 mono text-[10px] sm:text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-3 sm:px-5 py-2 sm:py-3 hover:bg-black/5 transition-colors"
-          >
-            Reset view
-          </button>
 
           {AMBIENT_SRC && (
             <button
