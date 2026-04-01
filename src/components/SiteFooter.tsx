@@ -13,7 +13,7 @@ export default function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid gap-8 md:grid-cols-3">
           <div>
-            <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+            <div className="mono text-[11px] uppercase tracking-widest">
               contact
             </div>
 
@@ -34,7 +34,7 @@ export default function SiteFooter() {
           </div>
 
           <div>
-            <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+            <div className="mono text-[11px] uppercase tracking-widest">
               pages
             </div>
 
@@ -68,7 +68,7 @@ export default function SiteFooter() {
           </div>
 
           <div>
-            <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
+            <div className="mono text-[11px] uppercase tracking-widest">
               credits
             </div>
 

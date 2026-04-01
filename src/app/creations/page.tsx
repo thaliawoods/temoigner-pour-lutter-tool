@@ -293,7 +293,7 @@ export default function CreationsPage() {
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/40">
+            <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/50">
               créations
             </div>
             <h1 className="gertrude mt-1 text-[32px] leading-tight">

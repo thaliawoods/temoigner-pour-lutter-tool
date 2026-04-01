@@ -9,7 +9,7 @@ const CDN_URL = process.env.NEXT_PUBLIC_BUNNY_CDN_URL ?? "";
 const STREAM_CDN = process.env.NEXT_PUBLIC_BUNNY_STREAM_CDN ?? "";
 
 const gradientText = {
-  backgroundImage: "linear-gradient(135deg, #ef444d 0%, #ff72c2 100%)",
+  backgroundImage: "linear-gradient(135deg, #ef444d 0%, #ff00ff 100%)",
   WebkitBackgroundClip: "text",
   WebkitTextFillColor: "transparent",
   backgroundClip: "text",
@@ -27,6 +27,12 @@ type ListItem = {
   filename: string;
   poster?: string;
   ref: TPLReference | null;
+};
+
+type GroupedRow = {
+  id: string;
+  ref: TPLReference | null;
+  items: ListItem[];
 };
 
 type StreamVideo = { guid: string; title: string; thumbnailFileName: string };
@@ -127,46 +133,20 @@ function MediaDisplay({ item }: { item: ListItem }) {
   );
 }
 
-function ExpandedContent({ item }: { item: ListItem }) {
-  const r = item.ref;
+function ExpandedContent({ row }: { row: GroupedRow }) {
+  const r = row.ref;
+  const items = row.items;
 
   return (
     <div
       className="pb-8 pt-4 pl-4 sm:pl-[calc(7rem+1rem)]"
     >
-      {/* Media */}
-      <div className="mb-4 max-w-[640px]">
-        <MediaDisplay item={item} />
+      {/* All media from this group */}
+      <div className="mb-4 max-w-[640px] space-y-3">
+        {items.map((item) => (
+          <MediaDisplay key={item.id} item={item} />
+        ))}
       </div>
-
-      {/* Gallery (ref-only) */}
-      {r?.mediaGallery && r.mediaGallery.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2 max-w-[640px]">
-          {r.mediaGallery.map((m, i) => {
-            const url = buildPublicUrl(m.src);
-            if (!url) return null;
-            if (m.kind === "video") {
-              return (
-                <video
-                  key={i}
-                  src={url}
-                  preload="metadata"
-                  className="h-20 w-32 object-cover bg-black/5"
-                  style={{ display: "block" }}
-                />
-              );
-            }
-            return (
-              <img
-                key={i}
-                src={url}
-                alt={`${r.title} — ${i + 1}`}
-                className="h-20 w-32 object-cover bg-black/5"
-              />
-            );
-          })}
-        </div>
-      )}
 
       {/* Notes */}
       {r?.notes?.trim() && (
@@ -176,7 +156,7 @@ function ExpandedContent({ item }: { item: ListItem }) {
       )}
 
       {/* Meta */}
-      <div className="mono text-[11px] uppercase tracking-[0.18em] text-black/40 flex flex-wrap gap-x-4 gap-y-1">
+      <div className="mono text-[11px] uppercase tracking-[0.18em] flex flex-wrap gap-x-4 gap-y-1 text-black/40">
         {r ? (
           <>
             {r.type && <span>{prettyType(r.type)}</span>}
@@ -192,7 +172,7 @@ function ExpandedContent({ item }: { item: ListItem }) {
             )}
           </>
         ) : (
-          <span className="text-black/25 normal-case">{item.filename}</span>
+          <span className="text-black/25 normal-case">{items[0]?.filename}</span>
         )}
       </div>
     </div>
@@ -205,7 +185,7 @@ export default function ArchivesReader() {
   const allRefs = useMemo(() => getAllReferences(), []);
   const refLookup = useMemo(() => buildRefLookup(allRefs), [allRefs]);
 
-  const [allItems, setAllItems] = useState<ListItem[]>([]);
+  const [allItems, setAllItems] = useState<GroupedRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [erroredIds, setErroredIds] = useState<Set<string>>(new Set());
 
@@ -251,14 +231,33 @@ export default function ArchivesReader() {
             ref: refLookup.get(normKey(filename)) ?? null,
           }));
 
-        // sort: matched refs by year first, unmatched last
-        const items = [...images, ...videos, ...audios].sort((a, b) => {
+        const items = [...images, ...videos, ...audios];
+
+        // Group items by reference id (or keep standalone if unlinked)
+        const groupMap = new Map<string, GroupedRow>();
+        const ungrouped: GroupedRow[] = [];
+
+        for (const item of items) {
+          if (item.ref) {
+            const key = item.ref.id;
+            const existing = groupMap.get(key);
+            if (existing) {
+              existing.items.push(item);
+            } else {
+              groupMap.set(key, { id: key, ref: item.ref, items: [item] });
+            }
+          } else {
+            ungrouped.push({ id: item.id, ref: null, items: [item] });
+          }
+        }
+
+        const grouped = [...groupMap.values(), ...ungrouped].sort((a, b) => {
           const ya = a.ref?.year ?? a.ref?.yearRange?.start ?? 9999;
           const yb = b.ref?.year ?? b.ref?.yearRange?.start ?? 9999;
           return ya - yb;
         });
 
-        setAllItems(items);
+        setAllItems(grouped);
       } catch (e) {
         console.error("[archives] fetch error", e);
       } finally {
@@ -273,17 +272,20 @@ export default function ArchivesReader() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    const visible = allItems.filter((item) => !erroredIds.has(item.id));
+    // Filter out rows whose all items have errored
+    const visible = allItems.filter((row) =>
+      row.items.some((item) => !erroredIds.has(item.id))
+    );
     const q = query.trim().toLowerCase();
     if (!q) return visible;
-    return visible.filter((item) => {
+    return visible.filter((row) => {
       const hay = [
-        item.ref?.title ?? "",
-        item.ref?.creator ?? "",
-        item.ref?.type ?? "",
-        String(item.ref?.year ?? ""),
-        item.filename,
-        item.kind,
+        row.ref?.title ?? "",
+        row.ref?.creator ?? "",
+        row.ref?.type ?? "",
+        String(row.ref?.year ?? ""),
+        ...row.items.map((i) => i.filename),
+        ...row.items.map((i) => i.kind),
       ].join(" ").toLowerCase();
       return hay.includes(q);
     });
@@ -304,7 +306,7 @@ export default function ArchivesReader() {
         {/* Page header */}
         <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/40">
+            <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/50">
               archives
             </div>
             <h1 className="gertrude mt-1 text-[32px] leading-tight">
@@ -322,7 +324,7 @@ export default function ArchivesReader() {
 
         {/* Column headers */}
         <div
-          className="mono text-[11px] uppercase tracking-[0.18em] text-black/35 pb-3"
+          className="mono text-[11px] uppercase tracking-[0.18em] pb-3 text-black/40"
           style={{
             display: "grid",
             gridTemplateColumns: "var(--archives-cols, 7rem 1fr 14rem)",
@@ -343,19 +345,20 @@ export default function ArchivesReader() {
           </div>
         )}
 
-        {filtered.map((item) => {
-          const active = selectedId === item.id;
-          const r = item.ref;
+        {filtered.map((row) => {
+          const active = selectedId === row.id;
+          const r = row.ref;
           const title = r?.title ?? "Connecter la référence";
           const year = r ? formatYear(r) : "—";
           const creator = r?.creator ?? "";
           const isUnlinked = !r;
+          const mediaCount = row.items.length;
 
           return (
-            <div key={item.id} id={`item-${item.id}`}>
+            <div key={row.id} id={`item-${row.id}`}>
               <button
                 type="button"
-                onClick={() => toggle(item.id)}
+                onClick={() => toggle(row.id)}
                 className="w-full text-left py-3 hover:opacity-70 transition-opacity"
                 style={{
                   display: "grid",
@@ -377,6 +380,11 @@ export default function ArchivesReader() {
                   style={active ? gradientText : (isUnlinked ? { color: "#aaa" } : { color: "#111" })}
                 >
                   {title}
+                  {mediaCount > 1 && (
+                    <span className="mono text-[10px] text-black/30 ml-2">
+                      ({mediaCount})
+                    </span>
+                  )}
                 </span>
 
                 <span
@@ -388,8 +396,8 @@ export default function ArchivesReader() {
               </button>
 
               {active && (
-                <ErrorBoundaryItem id={item.id} onError={markErrored}>
-                  <ExpandedContent item={item} />
+                <ErrorBoundaryItem id={row.id} onError={markErrored}>
+                  <ExpandedContent row={row} />
                 </ErrorBoundaryItem>
               )}
             </div>

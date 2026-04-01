@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getAllReferences } from "@/lib/references";
 import type { TPLReference, TPLType } from "@/lib/schema";
 
@@ -513,6 +513,131 @@ function WaveMini({ seed = 1 }: { seed?: number }) {
           style={{ height: `${h}px` }}
         />
       ))}
+    </div>
+  );
+}
+
+// ─── Tutorial ─────────────────────────────────────────────────────────────────
+
+function Tutorial({ onDismiss }: { onDismiss: () => void }) {
+  const steps = [
+    {
+      num: "01",
+      title: "Glisser des visuels",
+      text: "Glissez les images et vidéos depuis la galerie vers le canvas central. Sur mobile, appuyez sur + ajouter sous chaque média.",
+    },
+    {
+      num: "02",
+      title: "Ajouter du son",
+      text: "Dans la console audio, écoutez les pistes puis glissez-les vers le canvas. L\u2019audio apparaît en bas avec ses contrôles de lecture.",
+    },
+    {
+      num: "03",
+      title: "Composer",
+      text: "Déplacez et redimensionnez les éléments sur le canvas. Sélectionnez un élément pour le redimensionner ou le supprimer.",
+    },
+    {
+      num: "04",
+      title: "Exporter",
+      text: "Exportez votre création en pdf (recto + références), en vidéo avec le son, ou partagez-la sur la page Créations.",
+    },
+  ];
+
+  return (
+    <div className="bg-white">
+      <div className="flex items-center justify-between pb-4 border-b border-dashed border-black/15">
+        <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/40">
+          comment ça marche
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="mono text-[10px] uppercase tracking-[0.22em] text-black/30 hover:text-black transition-colors"
+        >
+          fermer ×
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-y-2 pt-3">
+        {steps.map((step) => (
+          <div key={step.num} className="flex items-baseline gap-2">
+            <span className="mono text-[10px] text-black/20 shrink-0">{step.num}</span>
+            <span className="gertrude text-[13px] text-black/70 shrink-0">{step.title}</span>
+            <span className="gertrude text-[12px] text-black/35 hidden sm:inline">{step.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MobileMediaCard ──────────────────────────────────────────────────────────
+
+function MobileMediaCard({
+  f,
+  onAdd,
+}: {
+  f: MediaFile;
+  onAdd: (fileId: string, kind: MediaKind) => void;
+}) {
+  return (
+    <div className="border border-zinc-200 bg-white overflow-hidden">
+      <div className="relative w-full" style={{ paddingBottom: "66%" }}>
+        <div className="absolute inset-0">
+          {f.kind === "video" ? (
+            <video
+              src={f.url}
+              muted
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-cover"
+              crossOrigin="anonymous"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = "none";
+              }}
+            />
+          ) : f.kind === "audio" ? (
+            <div className="w-full h-full bg-zinc-50 flex flex-col items-center justify-center gap-2 px-3">
+              <WaveMini seed={f.id.length * 33} />
+              <audio
+                controls
+                preload="none"
+                src={f.url}
+                className="w-full max-w-[200px]"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+          ) : (
+            <img
+              src={f.url}
+              alt=""
+              draggable={false}
+              className="w-full h-full object-cover"
+              crossOrigin="anonymous"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = "none";
+              }}
+            />
+          )}
+        </div>
+      </div>
+      <div className="p-2 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="mono text-[9px] uppercase tracking-widest text-zinc-400">
+            {f.kind}
+          </div>
+          <div className="text-[11px] text-zinc-700 truncate">{f.name}</div>
+        </div>
+        <button
+          type="button"
+          className="shrink-0 border border-zinc-300 bg-white px-2 py-1 mono text-[9px] uppercase tracking-widest text-zinc-600 hover:bg-zinc-50 active:bg-zinc-100"
+          onClick={() => onAdd(f.id, f.kind)}
+        >
+          + ajouter
+        </button>
+      </div>
     </div>
   );
 }
@@ -1133,6 +1258,36 @@ export default function DIYPage() {
     pdf.save("temoigner-pour-lutter.pdf");
   };
 
+  const [showTutorial, setShowTutorial] = useState(true);
+  const isMobile = (stageSize.w > 0 && stageSize.w < 640) || (typeof window !== "undefined" && window.innerWidth < 640);
+
+  const addToCanvas = useCallback(
+    (fileId: string, kind: MediaKind) => {
+      const c = rects.canvas;
+      if (kind === "audio") {
+        const audioId = `audio-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        setCanvasAudio((prev) => [...prev, { id: audioId, fileId }]);
+      } else {
+        const w = Math.min(300, c.w - 20);
+        const h = Math.min(190, c.h - 20);
+        const id = `canvas-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        setItems((prev) => [
+          ...prev,
+          {
+            id,
+            fileId,
+            kind,
+            x: clamp(Math.random() * (c.w - w - 20), 10, c.w - w - 10),
+            y: clamp(Math.random() * (c.h - h - 20), 10, c.h - h - 10),
+            w,
+            h,
+          },
+        ]);
+      }
+    },
+    [rects.canvas]
+  );
+
   const [videoExporting, setVideoExporting] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [sharedDone, setSharedDone] = useState(false);
@@ -1292,17 +1447,22 @@ export default function DIYPage() {
   };
 
 
+  const mobileAllMedia = useMemo(() => {
+    return [...poolFiles, ...audioList];
+  }, [poolFiles, audioList]);
+
   return (
     <main className="bg-white text-zinc-900">
-      <div className="mx-auto max-w-6xl px-6 pt-6 pb-14">
-        <div className="pt-4">
-          <div className="grid grid-cols-12 gap-6 items-end">
-            <div className="col-span-12 lg:col-span-8">
-              <div className="mono text-[11px] uppercase tracking-widest text-zinc-500">
+      <div className="mx-auto max-w-6xl px-3 sm:px-6 pt-4 sm:pt-6 pb-14">
+        <div className="pt-2 sm:pt-4">
+          {/* Header */}
+          <div className="flex flex-col gap-4 sm:grid sm:grid-cols-12 sm:gap-6 sm:items-end">
+            <div className="sm:col-span-12 lg:col-span-8">
+              <div className="mono text-[11px] uppercase tracking-widest text-black/50">
                 do it yourself
               </div>
 
-              <h1 className="mt-3 gertrude text-[30px] leading-[1.15] font-semibold tracking-tight">
+              <h1 className="mt-2 sm:mt-3 gertrude text-[24px] sm:text-[30px] leading-[1.15] font-semibold tracking-tight">
                 drag → compose → export
               </h1>
 
@@ -1313,10 +1473,10 @@ export default function DIYPage() {
               </div>
             </div>
 
-            <div className="col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
-              <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
+            <div className="sm:col-span-12 lg:col-span-4 flex justify-start lg:justify-end">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap lg:flex-nowrap">
                 <button
-                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  className="border border-zinc-300 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0"
                   onClick={refresh}
                   type="button"
                 >
@@ -1324,7 +1484,7 @@ export default function DIYPage() {
                 </button>
 
                 <button
-                  className="border px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  className="border px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0"
                   onClick={() => setShowVerso(false)}
                   type="button"
                   style={!showVerso ? { borderColor: "#27272a", background: "#27272a", color: "#fff" } : { borderColor: "#d4d4d8", background: "white", color: "#71717a" }}
@@ -1332,7 +1492,7 @@ export default function DIYPage() {
                   recto
                 </button>
                 <button
-                  className="border px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  className="border px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0"
                   onClick={() => setShowVerso(true)}
                   type="button"
                   style={showVerso ? { borderColor: "#27272a", background: "#27272a", color: "#fff" } : { borderColor: "#d4d4d8", background: "white", color: "#71717a" }}
@@ -1341,7 +1501,7 @@ export default function DIYPage() {
                 </button>
 
                 <button
-                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  className="border border-zinc-300 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0"
                   onClick={downloadPDF}
                   type="button"
                 >
@@ -1349,7 +1509,7 @@ export default function DIYPage() {
                 </button>
 
                 <button
-                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0 disabled:opacity-40"
+                  className="border border-zinc-300 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0 disabled:opacity-40"
                   onClick={downloadVideo}
                   type="button"
                   disabled={videoExporting}
@@ -1359,7 +1519,7 @@ export default function DIYPage() {
 
                 <div className="flex flex-col items-start gap-1">
                   <button
-                    className="border border-black bg-black text-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0 disabled:opacity-40"
+                    className="border border-black bg-black text-white px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0 disabled:opacity-40"
                     onClick={shareCreation}
                     type="button"
                     disabled={sharing || (items.length === 0 && canvasAudio.length === 0)}
@@ -1373,7 +1533,7 @@ export default function DIYPage() {
                 </div>
 
                 <button
-                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  className="border border-zinc-300 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0"
                   onClick={removeSelected}
                   type="button"
                 >
@@ -1381,7 +1541,7 @@ export default function DIYPage() {
                 </button>
 
                 <button
-                  className="border border-zinc-300 bg-white px-3 py-2 text-xs mono uppercase tracking-widest shrink-0"
+                  className="border border-zinc-300 bg-white px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs mono uppercase tracking-widest shrink-0"
                   onClick={clear}
                   type="button"
                 >
@@ -1391,14 +1551,36 @@ export default function DIYPage() {
             </div>
           </div>
 
-          <div className="mt-6 border-t border-zinc-200" />
+          {/* Tutorial */}
+          {showTutorial && (
+            <div className="mt-4">
+              <Tutorial onDismiss={() => setShowTutorial(false)} />
+            </div>
+          )}
 
+          {!showTutorial && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setShowTutorial(true)}
+                className="mono text-[10px] uppercase tracking-widest text-zinc-400 hover:text-zinc-600"
+              >
+                ? aide
+              </button>
+            </div>
+          )}
+
+          <div className="mt-4 border-t border-zinc-200" />
+
+          {/* Stage — canvas + pool (desktop) or canvas only (mobile) */}
           <div className="mt-4">
             <div
               ref={stageRef}
               className="relative w-full overflow-hidden"
               style={{
-                height: rects.totalH + 16,
+                height: isMobile
+                  ? rects.canvas.h + 18 + rects.console.h + 16
+                  : rects.totalH + 16,
                 overscrollBehaviorX: "none",
                 touchAction: "none",
               }}
@@ -1406,8 +1588,9 @@ export default function DIYPage() {
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
             >
-              {/* Pool tiles (only shown when recto) */}
-              {!showVerso &&
+              {/* Pool tiles — desktop only (scattered around canvas) */}
+              {!isMobile &&
+                !showVerso &&
                 tileData.map(({ tile, file }) => {
                   const style: React.CSSProperties = {
                     left: tile.x,
@@ -1429,9 +1612,9 @@ export default function DIYPage() {
               <div
                 className="absolute"
                 style={{
-                  left: rects.canvas.x,
-                  top: rects.canvas.y,
-                  width: rects.canvas.w,
+                  left: isMobile ? 0 : rects.canvas.x,
+                  top: isMobile ? 0 : rects.canvas.y,
+                  width: isMobile ? "100%" : rects.canvas.w,
                   height: rects.canvas.h + 18 + rects.console.h,
                   background: "#fff",
                 }}
@@ -1441,7 +1624,7 @@ export default function DIYPage() {
                   <div
                     ref={canvasCaptureRef}
                     style={{
-                      width: rects.canvas.w,
+                      width: isMobile ? "100%" : rects.canvas.w,
                       height: rects.canvas.h,
                       border: "1px solid #e4e4e7",
                       background: "white",
@@ -1458,11 +1641,12 @@ export default function DIYPage() {
                 ) : (
                   <div
                     ref={canvasCaptureRef}
-                    className="absolute bg-white"
+                    className="bg-white"
                     style={{
-                      left: 0,
-                      top: 0,
-                      width: rects.canvas.w,
+                      position: isMobile ? "relative" : "absolute",
+                      left: isMobile ? undefined : 0,
+                      top: isMobile ? undefined : 0,
+                      width: isMobile ? "100%" : rects.canvas.w,
                       height: rects.canvas.h,
                       border: "1px dashed #d4d4d8",
                     }}
@@ -1470,8 +1654,10 @@ export default function DIYPage() {
                   >
                     {items.length === 0 && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/20">
-                          drag media here
+                        <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/20 text-center px-4">
+                          {isMobile
+                            ? "ajoutez des médias depuis la galerie ci-dessous"
+                            : "drag media here"}
                         </div>
                       </div>
                     )}
@@ -1526,13 +1712,13 @@ export default function DIYPage() {
                             const f = filesById.get(fileId);
                             if (!f) return null;
                             return (
-                              <div key={id} className="flex items-center gap-2 px-3 py-2 shrink-0">
+                              <div key={id} className="flex items-center gap-2 px-2 sm:px-3 py-2 shrink-0">
                                 <WaveMini seed={fileId.length * 13} />
                                 <audio
                                   src={f.url}
                                   controls
                                   preload="none"
-                                  style={{ height: "28px", width: "200px" }}
+                                  style={{ height: "28px", width: isMobile ? "140px" : "200px" }}
                                   onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
                                 />
                                 <button
@@ -1549,76 +1735,78 @@ export default function DIYPage() {
                   </div>
                 )}
 
-                {/* Audio console (not captured) */}
-                <div
-                  className="absolute border border-zinc-200 bg-white"
-                  style={{
-                    left: 0,
-                    top: rects.canvas.h + 18,
-                    width: rects.console.w,
-                    height: rects.console.h,
-                  }}
-                >
-                  <div className="p-3 h-full flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className="mono text-[11px] uppercase tracking-widest text-zinc-600">
-                        audio console
+                {/* Audio console (not captured) — desktop: absolute, mobile: flow */}
+                {!isMobile && (
+                  <div
+                    className="absolute border border-zinc-200 bg-white"
+                    style={{
+                      left: 0,
+                      top: rects.canvas.h + 18,
+                      width: rects.console.w,
+                      height: rects.console.h,
+                    }}
+                  >
+                    <div className="p-3 h-full flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                          audio console
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <WaveMini seed={42} />
+                          <WaveMini seed={99} />
+                          <WaveMini seed={123} />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <WaveMini seed={42} />
-                        <WaveMini seed={99} />
-                        <WaveMini seed={123} />
-                      </div>
-                    </div>
 
-                    <div className="flex-1 overflow-auto border border-zinc-200">
-                      <div className="divide-y divide-zinc-200">
-                        {audioList.map((f) => (
-                          <div
-                            key={f.id}
-                            className="flex items-center justify-between gap-4 px-3 py-2 hover:bg-zinc-50"
-                          >
-                            <button
-                              type="button"
-                              className="min-w-0 text-left"
-                              onPointerDown={(e) => beginDragAudio(e, f.id)}
+                      <div className="flex-1 overflow-auto border border-zinc-200">
+                        <div className="divide-y divide-zinc-200">
+                          {audioList.map((f) => (
+                            <div
+                              key={f.id}
+                              className="flex items-center justify-between gap-4 px-3 py-2 hover:bg-zinc-50"
                             >
-                              <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
-                                AUDIO
-                              </div>
-                              <div className="mt-1 text-[12px] text-zinc-900 truncate">
-                                {f.name}
-                              </div>
-                              <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
-                                drag to canvas
-                              </div>
-                            </button>
+                              <button
+                                type="button"
+                                className="min-w-0 text-left"
+                                onPointerDown={(e) => beginDragAudio(e, f.id)}
+                              >
+                                <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
+                                  AUDIO
+                                </div>
+                                <div className="mt-1 text-[12px] text-zinc-900 truncate">
+                                  {f.name}
+                                </div>
+                                <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
+                                  drag to canvas
+                                </div>
+                              </button>
 
-                            <div className="flex items-center gap-3">
-                              <WaveMini seed={f.id.length * 17} />
-                              <audio
-                                controls
-                                preload="none"
-                                src={f.url}
-                                className="w-[120px] sm:w-[260px]"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLElement).style.display =
-                                    "none";
-                                }}
-                              />
+                              <div className="flex items-center gap-3">
+                                <WaveMini seed={f.id.length * 17} />
+                                <audio
+                                  controls
+                                  preload="none"
+                                  src={f.url}
+                                  className="w-[120px] sm:w-[260px]"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLElement).style.display =
+                                      "none";
+                                  }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
 
-                        {!loading && audioList.length === 0 ? (
-                          <div className="p-3 mono text-[11px] uppercase tracking-widest text-zinc-400">
-                            no audio found
-                          </div>
-                        ) : null}
+                          {!loading && audioList.length === 0 ? (
+                            <div className="p-3 mono text-[11px] uppercase tracking-widest text-zinc-400">
+                              no audio found
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Ghost drag preview */}
@@ -1648,7 +1836,42 @@ export default function DIYPage() {
             </div>
           </div>
 
-          <div className="h-24" />
+          {/* Mobile: media gallery + audio below the canvas */}
+          {isMobile && (
+            <div className="mt-6 space-y-6">
+              {/* Visual media grid */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="mono text-[11px] uppercase tracking-widest text-black/50">
+                    galerie de médias
+                  </div>
+                  <button
+                    className="border border-zinc-300 bg-white px-2 py-1 text-[10px] mono uppercase tracking-widest shrink-0"
+                    onClick={refresh}
+                    type="button"
+                  >
+                    refresh
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {mobileAllMedia.map((f) => (
+                    <MobileMediaCard
+                      key={f.id}
+                      f={f}
+                      onAdd={addToCanvas}
+                    />
+                  ))}
+                </div>
+                {!loading && mobileAllMedia.length === 0 && (
+                  <div className="p-4 text-center mono text-[11px] uppercase tracking-widest text-zinc-400">
+                    aucun média trouvé
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="h-12 sm:h-24" />
         </div>
       </div>
 

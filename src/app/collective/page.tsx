@@ -18,7 +18,7 @@ function Section({
     <div className="mx-auto w-full max-w-[860px] px-6 py-14">
       <div className="grid grid-cols-12 gap-8">
         <div className="col-span-12 md:col-span-3">
-          <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/45 pt-1">
+          <div className="mono text-[11px] uppercase tracking-[0.22em] pt-1">
             {label}
           </div>
         </div>
@@ -33,7 +33,7 @@ export default function CollectivePage() {
     <main className="w-full pb-24">
       {/* ——— Hero ——— */}
       <div className="mx-auto w-full max-w-[860px] px-6 pt-16 pb-14">
-        <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/40 mb-6">
+        <div className="mono text-[11px] uppercase tracking-[0.22em] mb-6">
           collective
         </div>
 
@@ -240,7 +240,7 @@ export default function CollectivePage() {
               className="grid grid-cols-12 gap-4 py-5 border-b border-dashed border-black/15 last:border-b-0"
             >
               <div className="col-span-12 md:col-span-3">
-                <div className="mono text-[11px] uppercase tracking-[0.18em] text-black/45 pt-1">
+                <div className="mono text-[11px] uppercase tracking-[0.18em] pt-1">
                   {label}
                 </div>
               </div>
