@@ -1296,6 +1296,7 @@ export default function DIYPage() {
     pdf.save("temoigner-pour-lutter.pdf");
   };
 
+  const [videoProgress, setVideoProgress] = useState("");
   const [showTutorial, setShowTutorial] = useState(true);
   const isMobile = (stageSize.w > 0 && stageSize.w < 640) || (typeof window !== "undefined" && window.innerWidth < 640);
 
@@ -1365,12 +1366,18 @@ export default function DIYPage() {
     setVideoExporting(true);
     try {
       const { toPng } = await import("html-to-image");
+      setVideoProgress("préparation…");
 
-      // Capture both sides as images
-      const [rectoDataUrl, versoDataUrl] = await Promise.all([
-        toPng(rectoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" }),
-        toPng(versoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" }),
-      ]);
+      // Start playing all video elements on the canvas so they're live
+      const videoEls = Array.from(rectoNode.querySelectorAll("video")) as HTMLVideoElement[];
+      for (const v of videoEls) {
+        v.currentTime = 0;
+        await v.play().catch(() => {});
+      }
+
+      // Capture static background (images, text, etc.) — videos will be drawn live
+      const rectoStaticUrl = await toPng(rectoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
+      const versoDataUrl = await toPng(versoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
 
       const loadImage = (url: string) =>
         new Promise<HTMLImageElement>((res) => {
@@ -1379,29 +1386,52 @@ export default function DIYPage() {
           img.src = url;
         });
 
-      const [rectoImg, versoImg] = await Promise.all([
-        loadImage(rectoDataUrl),
+      const [rectoStaticImg, versoImg] = await Promise.all([
+        loadImage(rectoStaticUrl),
         loadImage(versoDataUrl),
       ]);
 
-      // Create offscreen canvas matching recto dimensions
       const offscreen = document.createElement("canvas");
-      offscreen.width = rectoImg.naturalWidth;
-      offscreen.height = rectoImg.naturalHeight;
+      const scale = 2;
+      offscreen.width = rectoStaticImg.naturalWidth;
+      offscreen.height = rectoStaticImg.naturalHeight;
       const ctx = offscreen.getContext("2d")!;
 
-      // Draw recto first
-      ctx.drawImage(rectoImg, 0, 0);
+      // Map video element positions relative to rectoNode
+      const rectoRect = rectoNode.getBoundingClientRect();
+      const videoPositions = videoEls.map((v) => {
+        const r = v.getBoundingClientRect();
+        return {
+          el: v,
+          x: (r.left - rectoRect.left) * scale,
+          y: (r.top - rectoRect.top) * scale,
+          w: r.width * scale,
+          h: r.height * scale,
+        };
+      });
+
+      // Draw loop: static bg + live video frames
+      let animating = true;
+      const drawFrame = () => {
+        ctx.drawImage(rectoStaticImg, 0, 0);
+        for (const vp of videoPositions) {
+          if (vp.el.readyState >= 2) {
+            ctx.drawImage(vp.el, vp.x, vp.y, vp.w, vp.h);
+          }
+        }
+        if (animating) requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
 
       const preferredMime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
         : "video/webm";
 
       const fps = 30;
-      const rectoDuration = 8000;  // 8 seconds recto
-      const versoDuration = 4000;  // 4 seconds verso
+      const rectoDuration = 8000;
+      const versoDuration = 4000;
 
-      // Set up audio from canvasAudio items
+      // Audio setup
       let audioTracks: MediaStreamTrack[] = [];
       let audioElements: HTMLAudioElement[] = [];
       let audioCtx: AudioContext | null = null;
@@ -1409,7 +1439,6 @@ export default function DIYPage() {
       if (canvasAudio.length > 0) {
         audioCtx = new AudioContext();
         const dest = audioCtx.createMediaStreamDestination();
-
         for (const { fileId } of canvasAudio) {
           const file = filesById.get(fileId);
           if (!file) continue;
@@ -1421,11 +1450,9 @@ export default function DIYPage() {
           src.connect(dest);
           src.connect(audioCtx.destination);
         }
-
         audioTracks = dest.stream.getAudioTracks();
       }
 
-      // Build combined stream: video + optional audio
       const videoStream = offscreen.captureStream(fps);
       const combinedStream = new MediaStream([
         ...videoStream.getVideoTracks(),
@@ -1434,38 +1461,45 @@ export default function DIYPage() {
 
       const recorder = new MediaRecorder(combinedStream, { mimeType: preferredMime });
       const chunks: BlobPart[] = [];
-
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) chunks.push(e.data);
       };
 
-      // Start audio playback
       for (const audioEl of audioElements) {
         await audioEl.play().catch(() => {});
       }
 
       recorder.start(250);
 
-      // Show recto for rectoDuration
+      // Recto phase — videos play live
+      setVideoProgress("recto 0%");
+      const rectoStart = Date.now();
+      const rectoInterval = setInterval(() => {
+        const pct = Math.min(100, Math.round(((Date.now() - rectoStart) / rectoDuration) * 100));
+        setVideoProgress(`recto ${pct}%`);
+      }, 200);
       await new Promise<void>((res) => setTimeout(res, rectoDuration));
+      clearInterval(rectoInterval);
 
-      // Switch canvas to verso (scale to fit if dimensions differ)
+      // Switch to verso — stop live drawing
+      animating = false;
+      for (const v of videoEls) v.pause();
       ctx.clearRect(0, 0, offscreen.width, offscreen.height);
-      ctx.drawImage(
-        versoImg,
-        0,
-        0,
-        offscreen.width,
-        offscreen.height,
-      );
+      ctx.drawImage(versoImg, 0, 0, offscreen.width, offscreen.height);
 
-      // Show verso for versoDuration
+      setVideoProgress("verso 0%");
+      const versoStart = Date.now();
+      const versoInterval = setInterval(() => {
+        const pct = Math.min(100, Math.round(((Date.now() - versoStart) / versoDuration) * 100));
+        setVideoProgress(`verso ${pct}%`);
+      }, 200);
       await new Promise<void>((res) => setTimeout(res, versoDuration));
+      clearInterval(versoInterval);
 
+      setVideoProgress("finalisation…");
       recorder.stop();
       await new Promise<void>((res) => { recorder.onstop = () => res(); });
 
-      // Stop audio
       for (const audioEl of audioElements) {
         audioEl.pause();
         audioEl.src = "";
@@ -1481,6 +1515,7 @@ export default function DIYPage() {
       window.setTimeout(() => URL.revokeObjectURL(url), 2000);
     } finally {
       setVideoExporting(false);
+      setVideoProgress("");
     }
   };
 
@@ -1552,7 +1587,7 @@ export default function DIYPage() {
                   type="button"
                   disabled={videoExporting}
                 >
-                  {videoExporting ? "enregistrement…" : "vidéo"}
+                  {videoExporting ? (videoProgress || "préparation…") : "vidéo"}
                 </button>
 
                 <div className="flex flex-col items-start gap-1">
