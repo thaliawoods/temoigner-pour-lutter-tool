@@ -157,6 +157,15 @@ function trunc(s: string, n = 34) {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
+function displayName(f: MediaFile): string {
+  if (f.ref) {
+    const parts = [f.ref.title];
+    if (f.ref.creator) parts.push(f.ref.creator);
+    return parts.join(" — ");
+  }
+  return f.name;
+}
+
 function makeScatterTiles(params: {
   seed: number;
   files: MediaFile[];
@@ -170,12 +179,12 @@ function makeScatterTiles(params: {
 
   const tiles: PoolTile[] = [];
 
-  const minW = 120;
-  const maxW = 190;
-  const minH = 90;
-  const maxH = 140;
+  const minW = 100;
+  const maxW = 160;
+  const minH = 75;
+  const maxH = 120;
 
-  const margin = 10;
+  const margin = 8;
 
   const overlaps = (
     a: { x: number; y: number; w: number; h: number },
@@ -194,14 +203,11 @@ function makeScatterTiles(params: {
       if (overlaps(r, ar)) return false;
     }
     for (const t of tiles) {
-      const tr = { x: t.x - 6, y: t.y - 6, w: t.w + 12, h: t.h + 12 };
+      const tr = { x: t.x - 3, y: t.y - 3, w: t.w + 6, h: t.h + 6 };
       if (overlaps(r, tr)) return false;
     }
     return true;
   };
-
-  let tries = 0;
-  const maxTries = 4000;
 
   for (let i = 0; i < Math.min(count, files.length); i++) {
     const f = files[i];
@@ -211,6 +217,8 @@ function makeScatterTiles(params: {
     const h = Math.round(minH + rand() * (maxH - minH));
 
     let placed = false;
+    let tries = 0;
+    const maxTries = 500;
 
     while (!placed && tries < maxTries) {
       tries++;
@@ -243,7 +251,7 @@ function getCanvasRectInStage(params: { stageW: number; topOffset: number }) {
   const isMobile = stageW < 640;
   const canvasW = isMobile
     ? Math.max(280, stageW - 16)
-    : Math.min(900, Math.max(560, Math.floor(stageW * 0.66)));
+    : Math.min(800, Math.max(500, Math.floor(stageW * 0.55)));
   const canvasH = isMobile ? Math.round(canvasW * 0.7) : 460;
 
   const canvasX = Math.floor((stageW - canvasW) / 2);
@@ -628,7 +636,7 @@ function MobileMediaCard({
           <div className="mono text-[9px] uppercase tracking-widest text-zinc-400">
             {f.kind}
           </div>
-          <div className="text-[11px] text-zinc-700 truncate">{f.name}</div>
+          <div className="gertrude text-[12px] text-zinc-700 truncate">{displayName(f)}</div>
         </div>
         <button
           type="button"
@@ -687,19 +695,7 @@ function PoolCard({
         <div className="absolute inset-0 bg-white/35" />
       </div>
 
-      <div className="relative p-3">
-        <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
-          {f.kind.toUpperCase()}
-        </div>
-
-        <div className="mt-2 text-[13px] leading-snug text-zinc-900">
-          {trunc(f.name, 40)}
-        </div>
-
-        <div className="mt-2 mono text-[10px] uppercase tracking-widest text-zinc-500">
-          drag
-        </div>
-      </div>
+      <div className="absolute inset-0 cursor-grab" />
     </div>
   );
 }
@@ -875,7 +871,7 @@ export default function DIYPage() {
     return () => ro.disconnect();
   }, []);
 
-  const topOffset = stageSize.w > 0 && stageSize.w < 640 ? 20 : 78;
+  const topOffset = stageSize.w > 0 && stageSize.w < 640 ? 20 : 160;
   const rects = useMemo(() => {
     return getCanvasRectInStage({ stageW: stageSize.w || 1200, topOffset });
   }, [stageSize.w, topOffset]);
@@ -892,21 +888,21 @@ export default function DIYPage() {
 
     const avoid = [
       {
-        x: rects.canvas.x - 18,
-        y: rects.canvas.y - 18,
-        w: rects.canvas.w + 36,
-        h: rects.canvas.h + 36,
+        x: rects.canvas.x - 8,
+        y: rects.canvas.y - 8,
+        w: rects.canvas.w + 16,
+        h: rects.canvas.h + 16,
       },
       {
-        x: rects.console.x - 18,
-        y: rects.console.y - 18,
-        w: rects.console.w + 36,
-        h: rects.console.h + 36,
+        x: rects.console.x - 8,
+        y: rects.console.y - 8,
+        w: rects.console.w + 16,
+        h: rects.console.h + 16,
       },
-      { x: 0, y: 0, w: stageW, h: topOffset - 8 },
+      { x: 0, y: 0, w: stageW, h: 10 },
     ];
 
-    return makeScatterTiles({
+    const tiles = makeScatterTiles({
       seed: poolSeed * 1337,
       files: poolFiles,
       count: 26,
@@ -914,6 +910,48 @@ export default function DIYPage() {
       stageH,
       avoidRects: avoid,
     });
+
+    // Fallback: if fewer than 5 tiles placed, force-place in fixed slots
+    if (tiles.length < 5) {
+      const cx = rects.canvas.x;
+      const cy = rects.canvas.y;
+      const cw = rects.canvas.w;
+      const ch = rects.canvas.h;
+      const slots = [
+        { x: 10, y: cy },
+        { x: 10, y: cy + 160 },
+        { x: 10, y: cy + ch - 120 },
+        { x: cx + cw + 10, y: cy },
+        { x: cx + cw + 10, y: cy + 160 },
+        { x: cx + cw + 10, y: cy + ch - 120 },
+        { x: cx, y: cy + ch + 200 },
+        { x: cx + 180, y: cy + ch + 200 },
+        { x: 10, y: 10 },
+        { x: cx + cw + 10, y: 10 },
+      ];
+      const placed = new Set(tiles.map((t) => t.fileId));
+      let slotIdx = 0;
+      for (const f of poolFiles) {
+        if (tiles.length >= 8 || slotIdx >= slots.length) break;
+        if (placed.has(f.id)) continue;
+        const slot = slots[slotIdx++];
+        const tw = 130;
+        const th = 100;
+        if (slot.x + tw > stageW || slot.y + th > stageH) continue;
+        tiles.push({
+          id: `pool-${f.id}`,
+          fileId: f.id,
+          kind: f.kind === "video" ? "video" : "image",
+          x: slot.x,
+          y: slot.y,
+          w: tw,
+          h: th,
+        });
+        placed.add(f.id);
+      }
+    }
+
+    return tiles;
   }, [poolFiles, poolSeed, rects.canvas, rects.console, stageSize.w, stageSize.h]);
 
   const tileData = useMemo(() => {
@@ -1580,7 +1618,7 @@ export default function DIYPage() {
               style={{
                 height: isMobile
                   ? rects.canvas.h + 18 + rects.console.h + 16
-                  : rects.totalH + 16,
+                  : rects.totalH + 180,
                 overscrollBehaviorX: "none",
                 touchAction: "none",
               }}
@@ -1773,11 +1811,8 @@ export default function DIYPage() {
                                 <div className="mono text-[10px] uppercase tracking-widest text-zinc-500">
                                   AUDIO
                                 </div>
-                                <div className="mt-1 text-[12px] text-zinc-900 truncate">
-                                  {f.name}
-                                </div>
-                                <div className="mt-1 mono text-[10px] uppercase tracking-widest text-zinc-400">
-                                  drag to canvas
+                                <div className="mt-1 gertrude text-[13px] text-zinc-900 truncate">
+                                  {displayName(f)}
                                 </div>
                               </button>
 
