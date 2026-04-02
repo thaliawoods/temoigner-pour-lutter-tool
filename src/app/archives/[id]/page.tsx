@@ -79,9 +79,9 @@ function MediaBlock({ media, title }: { media?: TPLMedia | null; title: string }
 export default async function ArchiveReferencePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   const r = getReferenceById(id);
   if (!r) return notFound();
