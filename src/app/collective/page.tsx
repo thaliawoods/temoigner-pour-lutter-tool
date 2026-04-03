@@ -124,8 +124,9 @@ export default function CollectivePage() {
           <div className="pt-2 flex flex-wrap gap-x-6 gap-y-2">
             {[
               { href: "/archives", label: "Archives" },
-              { href: "/diy", label: "Do It Yourself" },
               { href: "/performances", label: "Performances" },
+              { href: "/diy", label: "Do It Yourself" },
+              { href: "/creations", label: "Vos Créations" },
             ].map(({ href, label }) => (
               <Link
                 key={href}

@@ -12,8 +12,11 @@ function buildUrl(filename: string) {
   return `${CDN_URL}/${encodePath(`performances/${filename}`)}`;
 }
 
-function stripExtension(s: string) {
-  return s.replace(/\.[a-z0-9]+$/i, "");
+function cleanTitle(s: string) {
+  return s
+    .replace(/\.[a-z0-9]+$/i, "")        // remove extension
+    .replace(/[\s_-]+\d{1,2}[\s_-]\d{1,2}[\s_-]\d{1,2}$/, "") // remove trailing time (HH MM SS)
+    .trim();
 }
 
 const VIDEO_EXTS = /\.(mp4|mov|webm|mkv|avi|m4v)$/i;
@@ -72,7 +75,7 @@ export default function PerformancesPage() {
 
               <div className="p-5 sm:p-6">
                 <h2 className="gertrude text-xl font-medium leading-snug">
-                  {stripExtension(filename)}
+                  {cleanTitle(filename)}
                 </h2>
               </div>
             </article>

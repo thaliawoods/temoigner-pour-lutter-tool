@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { buildPublicUrl, preloadPublicImage } from "@/lib/public-url";
 
-const AMBIENT_SRC = buildPublicUrl("mix/ELY&MARION.WAV");
+const AMBIENT_SRC = buildPublicUrl("mix/ELY&MARION.m4a");
 
 type MediaItem = {
   type: "image";
@@ -129,10 +129,10 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
   const baseH = viewportW > 900 ? 175 : 130;
   const pad   = viewportW > 900 ? 70  : 50;
 
-  const centerX = Math.round(viewportW * 0.5);
-  const centerY = Math.round(viewportH * 0.52);
-  const rx = Math.max(180, (viewportW - pad * 2) * 0.72);
-  const ry = Math.max(160, (viewportH - pad * 2) * 0.62);
+  const centerX = Math.round(viewportW * 0.48);
+  const centerY = Math.round(viewportH * 0.48);
+  const rx = Math.max(180, (viewportW - pad * 2) * 0.88);
+  const ry = Math.max(160, (viewportH - pad * 2) * 0.82);
 
   const GOLDEN   = Math.PI * (3 - Math.sqrt(5));
   const seedBase = Math.floor((viewportW * 0.21 + viewportH * 0.17 + count * 9.3) * 10);
@@ -150,8 +150,8 @@ function makeTiles(media: MediaItem[], viewportW: number, viewportH: number): Ti
     const prog  = Math.pow(t, 0.55);
     const angle = i * GOLDEN + (r4 - 0.5) * 0.9;
 
-    let x = Math.round(centerX + Math.cos(angle) * (prog * Math.max(60, rx - w * 0.55)) + (r1 - 0.5) * 170);
-    let y = Math.round(centerY + Math.sin(angle) * (prog * Math.max(60, ry - h * 0.55)) + (r2 - 0.5) * 140);
+    let x = Math.round(centerX + Math.cos(angle) * (prog * Math.max(60, rx - w * 0.55)) + (r1 - 0.5) * 220);
+    let y = Math.round(centerY + Math.sin(angle) * (prog * Math.max(60, ry - h * 0.55)) + (r2 - 0.5) * 190);
 
     x = clamp(x, pad, viewportW - pad - w);
     y = clamp(y, pad, viewportH - pad - h);
@@ -199,7 +199,7 @@ export default function HomePage() {
   const didInitViewRef = useRef(false);
   const defaultViewRef = useRef<View>({ x: 0, y: 0, scale: 1 });
 
-  const VISIBLE_COUNT = 18;
+  const VISIBLE_COUNT = 32;
   const mediaPoolRef = useRef<MediaItem[]>([]);
   const poolIndexRef = useRef(0);
 
@@ -443,11 +443,16 @@ export default function HomePage() {
     setView(defaultViewRef.current);
   }
 
+  const [audioLoading, setAudioLoading] = useState(false);
+
   function toggleAudio() {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
-      audio.play().then(() => setAudioPlaying(true)).catch(() => {});
+      setAudioLoading(true);
+      audio.play()
+        .then(() => { setAudioPlaying(true); setAudioLoading(false); })
+        .catch(() => setAudioLoading(false));
     } else {
       audio.pause();
       setAudioPlaying(false);
@@ -457,7 +462,7 @@ export default function HomePage() {
   return (
     <main className="w-full">
       {AMBIENT_SRC && (
-        <audio ref={audioRef} src={AMBIENT_SRC} loop preload="none" />
+        <audio ref={audioRef} src={AMBIENT_SRC} loop preload="metadata" />
       )}
       <section className="px-4 sm:px-6 pt-6 sm:pt-10 pb-4 sm:pb-6 max-w-[1400px]">
         <div className="mono text-[11px] tracking-[0.22em] uppercase text-black/50">
@@ -567,7 +572,7 @@ export default function HomePage() {
               }}
               className="absolute left-3 bottom-3 sm:left-8 sm:bottom-8 z-50 mono text-[10px] sm:text-[12px] tracking-[0.22em] uppercase border border-black/20 bg-white px-3 sm:px-5 py-2 sm:py-3 hover:bg-black/5 transition-colors"
             >
-              {audioPlaying ? "◼ son" : "▶ son"}
+              {audioLoading ? "⏳ son" : audioPlaying ? "◼ son" : "▶ son"}
             </button>
           )}
         </div>

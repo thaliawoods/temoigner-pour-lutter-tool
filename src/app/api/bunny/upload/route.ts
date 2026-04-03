@@ -26,11 +26,17 @@ export async function POST(req: NextRequest) {
     ? rawName.trim().slice(0, 80).replace(/[^a-zA-Z0-9À-ÖØ-öø-ÿ _\-]/g, "")
     : "";
 
+  const rawPseudo = formData.get("pseudo");
+  const pseudo = typeof rawPseudo === "string" && rawPseudo.trim()
+    ? rawPseudo.trim().slice(0, 40).replace(/[^a-zA-Z0-9À-ÖØ-öø-ÿ _\-]/g, "")
+    : "";
+
   const ext = file.type === "video/webm" ? "webm" : "png";
   const timestamp = Date.now();
-  const slug = name
+  let slug = name
     ? `${timestamp}-${name.toLowerCase().replace(/\s+/g, "-")}`
     : `${timestamp}`;
+  if (pseudo) slug += `--by--${pseudo.toLowerCase().replace(/\s+/g, "-")}`;
   const filename = `${slug}.${ext}`;
 
   const arrayBuffer = await file.arrayBuffer();
