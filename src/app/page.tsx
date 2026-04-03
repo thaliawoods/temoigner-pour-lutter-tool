@@ -54,10 +54,6 @@ function seeded01(seed: number): number {
   return x - Math.floor(x);
 }
 
-/**
- * Fit view + "boost" pour arriver plus zoomé.
- * Reset view revient exactement à cette view.
- */
 function fitViewToTiles(tiles: Tile[], viewportW: number, viewportH: number): View {
   if (tiles.length === 0) return { x: 0, y: 0, scale: 1 };
 
@@ -207,7 +203,6 @@ export default function HomePage() {
     const el = containerRef.current;
     if (!el || media.length === 0) return;
 
-    // Shuffle media for the pool
     const shuffled = [...media].sort(() => Math.random() - 0.5);
     mediaPoolRef.current = shuffled;
     poolIndexRef.current = VISIBLE_COUNT;
@@ -242,24 +237,20 @@ export default function HomePage() {
     return () => ro.disconnect();
   }, [media]);
 
-  // Cycle tiles: swap one tile every 2.5 seconds
   useEffect(() => {
     if (media.length <= VISIBLE_COUNT) return;
 
     const interval = setInterval(() => {
-      // Swap 2 tiles each tick for faster cycling
       const pool = mediaPoolRef.current;
       if (pool.length === 0) return;
 
       setTiles((prev) => {
         if (prev.length === 0) return prev;
 
-        // Pick a random tile to replace
         const replaceIdx = Math.floor(Math.random() * prev.length);
         const nextMedia = pool[poolIndexRef.current % pool.length];
         poolIndexRef.current++;
 
-        // Reset loaded state so new image fades in
         setLoadedTileIds((loaded) => {
           const next = new Set(loaded);
           next.delete(prev[replaceIdx].id);

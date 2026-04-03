@@ -16,7 +16,7 @@ const gradientText = {
   color: "transparent",
 };
 
-// ── types ────────────────────────────────────────────────────────────────────
+
 
 type MediaKind = "image" | "video" | "audio";
 
@@ -37,7 +37,7 @@ type GroupedRow = {
 
 type StreamVideo = { guid: string; title: string; thumbnailFileName: string };
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+
 
 function encodePath(p: string) {
   return p.split("/").map(encodeURIComponent).join("/");
@@ -100,7 +100,7 @@ function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
 const IMAGE_EXTS = /\.(png|jpe?g|webp|gif|svg|avif)$/i;
 const AUDIO_EXTS = /\.(mp3|wav|ogg|m4a|aac|flac)$/i;
 
-// ── sub-components ────────────────────────────────────────────────────────────
+
 
 function MediaDisplay({ item }: { item: ListItem }) {
   if (item.kind === "video") {
@@ -141,21 +141,21 @@ function ExpandedContent({ row }: { row: GroupedRow }) {
     <div
       className="pb-8 pt-4 pl-4 sm:pl-[calc(7rem+1rem)]"
     >
-      {/* All media from this group */}
+
       <div className="mb-4 max-w-[640px] space-y-3">
         {items.map((item) => (
           <MediaDisplay key={item.id} item={item} />
         ))}
       </div>
 
-      {/* Notes */}
+
       {r?.notes?.trim() && (
         <p className="gertrude text-[16px] leading-[1.7] max-w-[60ch] mb-3 text-black">
           {r.notes}
         </p>
       )}
 
-      {/* Meta */}
+
       <div className="mono text-[11px] uppercase tracking-[0.18em] flex flex-wrap gap-x-4 gap-y-1 text-black/40">
         {r ? (
           <>
@@ -179,7 +179,7 @@ function ExpandedContent({ row }: { row: GroupedRow }) {
   );
 }
 
-// ── main ──────────────────────────────────────────────────────────────────────
+
 
 export default function ArchivesReader() {
   const allRefs = useMemo(() => getAllReferences(), []);
@@ -233,7 +233,7 @@ export default function ArchivesReader() {
 
         const items = [...images, ...videos, ...audios];
 
-        // Group items by reference id (or keep standalone if unlinked)
+
         const groupMap = new Map<string, GroupedRow>();
         const ungrouped: GroupedRow[] = [];
 
@@ -272,7 +272,7 @@ export default function ArchivesReader() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    // Filter out rows whose all items have errored
+
     const visible = allItems.filter((row) =>
       row.items.some((item) => !erroredIds.has(item.id))
     );
@@ -303,7 +303,7 @@ export default function ArchivesReader() {
     <main className="bg-white text-zinc-900 min-h-screen">
       <div className="mx-auto max-w-[1200px] px-6 py-10">
 
-        {/* Page header */}
+
         <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/50">
@@ -322,7 +322,7 @@ export default function ArchivesReader() {
           />
         </div>
 
-        {/* Column headers */}
+
         <div
           className="mono text-[11px] uppercase tracking-[0.18em] pb-3 text-black/40"
           style={{
@@ -338,7 +338,7 @@ export default function ArchivesReader() {
         </div>
         <style>{`@media (max-width: 639px) { :root { --archives-cols: 5rem 1fr; } }`}</style>
 
-        {/* Rows */}
+
         {loading && (
           <div className="py-10 mono text-[11px] uppercase tracking-[0.18em] text-black/30">
             chargement…
@@ -418,7 +418,7 @@ export default function ArchivesReader() {
   );
 }
 
-// simple error boundary wrapper to hide broken media items
+
 import React from "react";
 
 class ErrorBoundaryItem extends React.Component<

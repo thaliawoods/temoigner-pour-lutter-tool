@@ -31,7 +31,7 @@ function Section({
 export default function CollectivePage() {
   return (
     <main className="w-full pb-24">
-      {/* --- Hero --- */}
+
       <div className="mx-auto w-full max-w-[860px] px-6 pt-16 pb-14">
         <div className="mono text-[11px] uppercase tracking-[0.22em] mb-6">
           collective
@@ -54,7 +54,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* --- À propos --- */}
+
       <Section label="à propos">
         <p className="gertrude text-[17px] leading-[1.7] text-black/80">
           Créer un outil de diffusion des luttes féministes - voilà la mission
@@ -66,7 +66,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* --- Artistes --- */}
+
       <Section label="artistes">
         <div className="space-y-10">
           <div>
@@ -101,7 +101,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* --- Témoigner pour lutter --- */}
+
       <Section label="témoigner pour lutter">
         <div className="space-y-6">
           <p className="gertrude text-[17px] leading-[1.7] text-black/80">
@@ -142,7 +142,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* --- Agenda 2025 --- */}
+
       <Section label="2025">
         <div className="space-y-0">
           {[
@@ -197,7 +197,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* --- Contact --- */}
+
       <Section label="contact">
         <div className="space-y-0">
           {[
