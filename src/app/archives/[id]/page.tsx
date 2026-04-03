@@ -10,7 +10,7 @@ export const revalidate = 0;
 function formatYear(r: TPLReference): string {
   if (r.year) return String(r.year);
   if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
-  return "—";
+  return "-";
 }
 
 function MetaCell({ label, value }: { label: string; value: string }) {
@@ -111,7 +111,7 @@ export default async function ArchiveReferencePage({
                   <img
                     key={i}
                     src={safePublicUrl(m.src)}
-                    alt={`${r.title} — ${i + 1}`}
+                    alt={`${r.title} - ${i + 1}`}
                     className="w-full aspect-[4/3] object-cover bg-zinc-100"
                   />
                 ))}
@@ -121,13 +121,13 @@ export default async function ArchiveReferencePage({
 
           <div className="grid grid-cols-1 md:grid-cols-3">
             <MetaCell label="year" value={formatYear(r)} />
-            <MetaCell label="location" value={r.location ?? "—"} />
+            <MetaCell label="location" value={r.location ?? "-"} />
             <MetaCell label="type" value={r.type.replaceAll("_", " ")} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 border-t border-zinc-300">
-            <MetaCell label="creator" value={r.creator ?? "—"} />
-            <MetaCell label="source" value={r.sourceLabel ?? "—"} />
+            <MetaCell label="creator" value={r.creator ?? "-"} />
+            <MetaCell label="source" value={r.sourceLabel ?? "-"} />
             <MetaCell label="id" value={r.id} />
           </div>
 

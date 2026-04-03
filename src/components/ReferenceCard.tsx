@@ -5,7 +5,7 @@ import type { TPLReference } from "@/lib/schema";
 function formatYear(r: TPLReference) {
   if (r.year) return String(r.year);
   if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
-  return "—";
+  return "-";
 }
 
 export default function ReferenceCard({

@@ -342,7 +342,7 @@ export default function CreationsPage() {
 
         <div className="border-t border-black/10 mb-8" />
 
-        {/* Upload form — shown when toggled */}
+        {/* Upload form - shown when toggled */}
         {showForm && (
           <UploadForm
             onUploaded={handleUploaded}
@@ -372,7 +372,7 @@ export default function CreationsPage() {
           </div>
         )}
 
-        {/* Gallery — 2 columns on md, 3 on xl */}
+        {/* Gallery - 2 columns on md, 3 on xl */}
         <div className="columns-1 sm:columns-2 xl:columns-3 gap-6 space-y-6">
           {creations.map((c) => (
             <div key={c.filename} className="break-inside-avoid">

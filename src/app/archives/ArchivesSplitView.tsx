@@ -12,7 +12,7 @@ function prettyType(t: string) {
 function formatYear(r: TPLReference): string {
   if (r.year) return String(r.year);
   if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
-  return "—";
+  return "-";
 }
 
 function hasMedia(r: TPLReference) {
@@ -196,7 +196,7 @@ export default function ArchivesSplitView() {
                       <div className="mono text-[10px] uppercase tracking-widest text-zinc-600">
                         location
                       </div>
-                      <div className="mt-2 text-sm">{selected.location ?? "—"}</div>
+                      <div className="mt-2 text-sm">{selected.location ?? "-"}</div>
                     </div>
                   </div>
 
@@ -205,7 +205,7 @@ export default function ArchivesSplitView() {
                       <p>{selected.notes}</p>
                     ) : (
                       <p className="text-zinc-500">
-                        (notes à compléter — ici on mettra description, contexte, liens, tags…)
+                        (notes à compléter - ici on mettra description, contexte, liens, tags…)
                       </p>
                     )}
                   </div>
@@ -215,7 +215,7 @@ export default function ArchivesSplitView() {
                       <span className="mono text-[11px] uppercase tracking-widest text-zinc-600">
                         source
                       </span>{" "}
-                      —{" "}
+                      -{" "}
                       {selected.sourceUrl ? (
                         <a className="underline" href={selected.sourceUrl} target="_blank" rel="noreferrer">
                           {selected.sourceLabel ?? selected.sourceUrl}

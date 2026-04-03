@@ -4,7 +4,7 @@ import type { TPLReference } from "@/lib/schema";
 function formatYear(r: TPLReference) {
   if (r.year) return String(r.year);
   if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
-  return "—";
+  return "-";
 }
 
 export default function ArchiveCard({ r }: { r: TPLReference }) {
@@ -26,9 +26,9 @@ export default function ArchiveCard({ r }: { r: TPLReference }) {
 
         <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 border-t border-zinc-300 pt-3">
           <Meta label="year" value={year} />
-          <Meta label="creator" value={r.creator ?? "—"} />
-          <Meta label="location" value={r.location ?? "—"} />
-          <Meta label="source" value={r.sourceLabel ?? "—"} />
+          <Meta label="creator" value={r.creator ?? "-"} />
+          <Meta label="location" value={r.location ?? "-"} />
+          <Meta label="source" value={r.sourceLabel ?? "-"} />
         </div>
 
         {r.notes ? (
