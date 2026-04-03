@@ -14,8 +14,8 @@ function buildUrl(filename: string) {
 
 function cleanTitle(s: string) {
   return s
-    .replace(/\.[a-z0-9]+$/i, "")        // remove extension
-    .replace(/[\s_-]+\d{1,2}[\s_-]\d{1,2}[\s_-]\d{1,2}$/, "") // remove trailing time (HH MM SS)
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[\s_-]+\d{1,2}[\s_-]\d{1,2}[\s_-]\d{1,2}$/, "")
     .trim();
 }
 

@@ -75,7 +75,7 @@ export default function SiteHeader({
   return (
     <header className={headerClass}>
       <div className={innerClass}>
-        {/* Mobile */}
+
         <div className="md:hidden">
           <div className="flex items-center justify-between gap-4">
             <NavItem
@@ -112,7 +112,7 @@ export default function SiteHeader({
           )}
         </div>
 
-        {/* Desktop */}
+
         <div className="hidden md:flex md:items-center md:justify-between">
           <NavItem
             href="/"

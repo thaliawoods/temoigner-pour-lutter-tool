@@ -48,7 +48,6 @@ type Creation = {
 const VIDEO_EXTS = /\.webm$/i;
 const IMAGE_EXTS = /\.(png|jpe?g|webp|gif)$/i;
 
-// ── upload form ───────────────────────────────────────────────────────────────
 
 function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: () => void }) {
   const [dragging, setDragging] = useState(false);
@@ -107,7 +106,7 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
 
   return (
     <div className="border border-dashed border-black/25 mb-12">
-      {/* Form header */}
+
       <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-dashed border-black/15">
         <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/45">
           partager une création
@@ -122,7 +121,7 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
       </div>
 
       <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Drop zone */}
+
         <div
           onDrop={onDrop}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -163,7 +162,7 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
           )}
         </div>
 
-        {/* Fields + submit */}
+
         <div className="flex flex-col justify-between gap-4">
           <div>
             <label className="mono text-[10px] uppercase tracking-[0.2em] text-black/40 block mb-2">
@@ -215,7 +214,6 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
   );
 }
 
-// ── creation card ─────────────────────────────────────────────────────────────
 
 function CreationCard({ creation }: { creation: Creation }) {
   const [errored, setErrored] = useState(false);
@@ -275,7 +273,6 @@ function CreationCard({ creation }: { creation: Creation }) {
   );
 }
 
-// ── main ─────────────────────────────────────────────────────────────────────
 
 export default function CreationsPage() {
   const [creations, setCreations] = useState<Creation[]>([]);
@@ -301,7 +298,6 @@ export default function CreationsPage() {
         }))
       );
     } catch {
-      /* silent */
     } finally {
       setLoading(false);
     }
@@ -320,7 +316,7 @@ export default function CreationsPage() {
     <main className="bg-white text-zinc-900 min-h-screen">
       <div className="mx-auto max-w-[1100px] px-6 pt-10 pb-20">
 
-        {/* Header */}
+
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/50">
@@ -342,7 +338,7 @@ export default function CreationsPage() {
 
         <div className="border-t border-black/10 mb-8" />
 
-        {/* Upload form - shown when toggled */}
+
         {showForm && (
           <UploadForm
             onUploaded={handleUploaded}
@@ -350,14 +346,14 @@ export default function CreationsPage() {
           />
         )}
 
-        {/* Count */}
+
         <div className="mono text-[11px] uppercase tracking-[0.22em] text-black/35 mb-6">
           {loading
             ? "chargement…"
             : `${creations.length} création${creations.length !== 1 ? "s" : ""}`}
         </div>
 
-        {/* Empty state */}
+
         {!loading && creations.length === 0 && (
           <div
             className="border border-dashed border-black/15 flex flex-col items-center justify-center py-20 gap-4 cursor-pointer hover:border-black/30 transition-colors"
@@ -372,7 +368,7 @@ export default function CreationsPage() {
           </div>
         )}
 
-        {/* Gallery - 2 columns on md, 3 on xl */}
+
         <div className="columns-1 sm:columns-2 xl:columns-3 gap-6 space-y-6">
           {creations.map((c) => (
             <div key={c.filename} className="break-inside-avoid">

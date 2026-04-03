@@ -40,7 +40,7 @@ type CanvasItem = {
   h: number;
 };
 
-// ─── normKey helpers ─────────────────────────────────────────────────────────
+
 
 function normKey(s: string) {
   return s
@@ -73,7 +73,7 @@ function buildRefLookup(refs: TPLReference[]): Map<string, TPLReference> {
   return map;
 }
 
-// ─── URL helpers ─────────────────────────────────────────────────────────────
+
 
 function encodePath(path: string) {
   return path
@@ -136,7 +136,7 @@ function toMediaFile(
   };
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -267,7 +267,7 @@ function getCanvasRectInStage(params: { stageW: number; topOffset: number }) {
   };
 }
 
-// ─── Type display labels ──────────────────────────────────────────────────────
+
 
 const TYPE_LABELS: Record<TPLType, string> = {
   collectif: "Collectif, atelier, groupe",
@@ -293,7 +293,7 @@ const TYPE_ORDER: TPLType[] = [
   "oeuvre_picturale",
 ];
 
-// ─── VersoPage component ──────────────────────────────────────────────────────
+
 
 function VersoPage({
   items,
@@ -316,7 +316,7 @@ function VersoPage({
     [items, canvasAudio]
   );
 
-  // Collect unique refs + unmatched items from canvas
+
   const { refsByType, unmatched } = useMemo(() => {
     const seen = new Set<string>();
     const map = new Map<TPLType, TPLReference[]>();
@@ -361,7 +361,7 @@ function VersoPage({
         overflow: "hidden",
       }}
     >
-      {/* Header */}
+
       <div
         style={{
           display: "flex",
@@ -403,7 +403,7 @@ function VersoPage({
         </div>
       </div>
 
-      {/* Divider */}
+
       <div
         style={{
           borderTop: "1px dashed #d4d4d8",
@@ -412,7 +412,7 @@ function VersoPage({
         }}
       />
 
-      {/* Body */}
+
       {!hasContent ? (
         <div
           className="mono"
@@ -507,7 +507,7 @@ function VersoPage({
   );
 }
 
-// ─── WaveMini ─────────────────────────────────────────────────────────────────
+
 
 function WaveMini({ seed = 1 }: { seed?: number }) {
   const rand = mulberry32(seed);
@@ -525,7 +525,7 @@ function WaveMini({ seed = 1 }: { seed?: number }) {
   );
 }
 
-// ─── Tutorial ─────────────────────────────────────────────────────────────────
+
 
 function Tutorial({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -542,7 +542,7 @@ function Tutorial({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-// ─── MobileMediaCard ──────────────────────────────────────────────────────────
+
 
 function MobileMediaCard({
   f,
@@ -613,7 +613,7 @@ function MobileMediaCard({
   );
 }
 
-// ─── PoolCard ─────────────────────────────────────────────────────────────────
+
 
 function PoolCard({
   f,
@@ -663,7 +663,7 @@ function PoolCard({
   );
 }
 
-// ─── CanvasBlock ──────────────────────────────────────────────────────────────
+
 
 function CanvasBlock({
   f,
@@ -751,7 +751,7 @@ function CanvasBlock({
   );
 }
 
-// ─── DIYPage ──────────────────────────────────────────────────────────────────
+
 
 export default function DIYPage() {
   const [visualFiles, setVisualFiles] = useState<MediaFile[]>([]);
@@ -874,7 +874,7 @@ export default function DIYPage() {
       avoidRects: avoid,
     });
 
-    // Fallback: if fewer than 5 tiles placed, force-place in fixed slots
+
     if (tiles.length < 5) {
       const cx = rects.canvas.x;
       const cy = rects.canvas.y;
@@ -1218,7 +1218,7 @@ export default function DIYPage() {
     setSelectedId(null);
   };
 
-  // ─── Export: 2-page PDF (recto + verso) ────────────────────────────────────
+
 
   const downloadPDF = async () => {
     const rectoNode = canvasCaptureRef.current;
@@ -1331,14 +1331,14 @@ export default function DIYPage() {
       const { toPng } = await import("html-to-image");
       setVideoProgress("préparation…");
 
-      // Start playing all video elements on the canvas so they're live
+
       const videoEls = Array.from(rectoNode.querySelectorAll("video")) as HTMLVideoElement[];
       for (const v of videoEls) {
         v.currentTime = 0;
         await v.play().catch(() => {});
       }
 
-      // Capture static background (images, text, etc.) - videos will be drawn live
+
       const rectoStaticUrl = await toPng(rectoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
       const versoDataUrl = await toPng(versoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
 
@@ -1360,7 +1360,7 @@ export default function DIYPage() {
       offscreen.height = rectoStaticImg.naturalHeight;
       const ctx = offscreen.getContext("2d")!;
 
-      // Map video element positions relative to rectoNode
+
       const rectoRect = rectoNode.getBoundingClientRect();
       const videoPositions = videoEls.map((v) => {
         const r = v.getBoundingClientRect();
@@ -1373,7 +1373,7 @@ export default function DIYPage() {
         };
       });
 
-      // Draw loop: static bg + live video frames
+
       let animating = true;
       const drawFrame = () => {
         ctx.drawImage(rectoStaticImg, 0, 0);
@@ -1394,7 +1394,7 @@ export default function DIYPage() {
       const rectoDuration = 8000;
       const versoDuration = 4000;
 
-      // Audio setup
+
       let audioTracks: MediaStreamTrack[] = [];
       let audioElements: HTMLAudioElement[] = [];
       let audioCtx: AudioContext | null = null;
@@ -1434,7 +1434,7 @@ export default function DIYPage() {
 
       recorder.start(250);
 
-      // Recto phase - videos play live
+
       setVideoProgress("recto 0%");
       const rectoStart = Date.now();
       const rectoInterval = setInterval(() => {
@@ -1444,7 +1444,7 @@ export default function DIYPage() {
       await new Promise<void>((res) => setTimeout(res, rectoDuration));
       clearInterval(rectoInterval);
 
-      // Switch to verso - stop live drawing
+
       animating = false;
       for (const v of videoEls) v.pause();
       ctx.clearRect(0, 0, offscreen.width, offscreen.height);
@@ -1491,7 +1491,7 @@ export default function DIYPage() {
     <main className="bg-white text-zinc-900">
       <div className="mx-auto max-w-6xl px-3 sm:px-6 pt-4 sm:pt-6 pb-14">
         <div className="pt-2 sm:pt-4">
-          {/* Header */}
+
           <div className="flex flex-col gap-4 sm:grid sm:grid-cols-12 sm:gap-6 sm:items-end">
             <div className="sm:col-span-12 lg:col-span-8">
               <div className="mono text-[11px] uppercase tracking-widest text-black/50">
@@ -1587,7 +1587,7 @@ export default function DIYPage() {
             </div>
           </div>
 
-          {/* Tutorial */}
+
           {showTutorial && (
             <div className="mt-4">
               <Tutorial onDismiss={() => setShowTutorial(false)} />
@@ -1608,7 +1608,7 @@ export default function DIYPage() {
 
           <div className="mt-4 border-t border-zinc-200" />
 
-          {/* Stage - canvas + pool (desktop) or canvas only (mobile) */}
+
           <div className="mt-4">
             <div
               ref={stageRef}
@@ -1624,7 +1624,7 @@ export default function DIYPage() {
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
             >
-              {/* Pool tiles - desktop only (scattered around canvas) */}
+
               {!isMobile &&
                 !showVerso &&
                 tileData.map(({ tile, file }) => {
@@ -1655,7 +1655,7 @@ export default function DIYPage() {
                   background: "#fff",
                 }}
               >
-                {/* Canvas area - recto or verso */}
+
                 {showVerso ? (
                   <div
                     ref={canvasCaptureRef}
@@ -1737,7 +1737,7 @@ export default function DIYPage() {
                       );
                     })}
 
-                    {/* Audio strip - pinned to the bottom of the canvas */}
+
                     {canvasAudio.length > 0 && (
                       <div
                         className="absolute inset-x-0 bottom-0 bg-white"
@@ -1771,7 +1771,7 @@ export default function DIYPage() {
                   </div>
                 )}
 
-                {/* Audio console (not captured) - desktop: absolute, mobile: flow */}
+
                 {!isMobile && (
                   <div
                     className="absolute border border-zinc-200 bg-white"
@@ -1842,7 +1842,7 @@ export default function DIYPage() {
                 )}
               </div>
 
-              {/* Ghost drag preview */}
+
               {ghost ? (
                 <div
                   className="absolute pointer-events-none bg-white border border-zinc-200 opacity-85 overflow-hidden"
@@ -1869,10 +1869,10 @@ export default function DIYPage() {
             </div>
           </div>
 
-          {/* Mobile: audio console + media gallery below the canvas */}
+
           {isMobile && (
             <div className="mt-4 space-y-6">
-              {/* Audio console - scrollable */}
+
               <div className="border border-zinc-200 bg-white">
                 <div className="p-3 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -1927,7 +1927,7 @@ export default function DIYPage() {
                 </div>
               </div>
 
-              {/* Visual media grid */}
+
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="mono text-[11px] uppercase tracking-widest text-black/50">
@@ -1963,7 +1963,7 @@ export default function DIYPage() {
         </div>
       </div>
 
-      {/* Hidden verso div for PDF capture - always rendered off-screen */}
+
       <div
         style={{
           position: "absolute",
