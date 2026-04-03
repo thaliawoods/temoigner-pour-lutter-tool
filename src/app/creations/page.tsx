@@ -19,7 +19,14 @@ function stripExt(s: string) {
 function prettyName(filename: string) {
   const base = stripExt(filename);
   const withoutTs = base.replace(/^\d{13}-?/, "");
-  return withoutTs ? withoutTs.replace(/-/g, " ") : "";
+  const withoutPseudo = withoutTs.replace(/--by--.*$/, "");
+  return withoutPseudo ? withoutPseudo.replace(/-/g, " ") : "";
+}
+
+function extractPseudo(filename: string) {
+  const base = stripExt(filename);
+  const match = base.match(/--by--(.+)$/);
+  return match ? match[1].replace(/-/g, " ") : "";
 }
 
 function formatDate(filename: string) {
@@ -34,6 +41,7 @@ type Creation = {
   url: string;
   isVideo: boolean;
   name: string;
+  pseudo: string;
   date: string;
 };
 
@@ -46,6 +54,7 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
+  const [pseudo, setPseudo] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -76,6 +85,7 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
       const fd = new FormData();
       fd.append("file", file);
       if (name.trim()) fd.append("name", name.trim());
+      if (pseudo.trim()) fd.append("pseudo", pseudo.trim());
       const res = await fetch("/api/bunny/upload", { method: "POST", body: fd });
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
@@ -83,6 +93,7 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
       }
       setFile(null);
       setName("");
+      setPseudo("");
       setDone(true);
       onUploaded();
     } catch (e) {
@@ -168,6 +179,19 @@ function UploadForm({ onUploaded, onClose }: { onUploaded: () => void; onClose: 
           </div>
 
           <div>
+            <label className="mono text-[10px] uppercase tracking-[0.2em] text-black/40 block mb-2">
+              pseudo (optionnel)
+            </label>
+            <input
+              value={pseudo}
+              onChange={(e) => setPseudo(e.target.value)}
+              placeholder="votre pseudo ou nom"
+              maxLength={40}
+              className="gertrude w-full border-b border-black/25 bg-transparent py-1.5 text-[15px] placeholder:text-black/25 focus:outline-none focus:border-black"
+            />
+          </div>
+
+          <div>
             {error && (
               <div className="mono text-[11px] text-red-500 mb-3 leading-snug">{error}</div>
             )}
@@ -226,8 +250,13 @@ function CreationCard({ creation }: { creation: Creation }) {
           {creation.name && (
             <div className="gertrude text-[16px] leading-snug">{creation.name}</div>
           )}
+          {creation.pseudo && (
+            <div className="mono text-[10px] tracking-[0.18em] text-black/45 mt-1">
+              par {creation.pseudo}
+            </div>
+          )}
           {creation.date && (
-            <div className="mono text-[10px] uppercase tracking-[0.18em] text-black/35 mt-1">
+            <div className="mono text-[10px] uppercase tracking-[0.18em] text-black/35 mt-0.5">
               {creation.date}
             </div>
           )}
@@ -267,6 +296,7 @@ export default function CreationsPage() {
           url: buildUrl(filename),
           isVideo: VIDEO_EXTS.test(filename),
           name: prettyName(filename),
+          pseudo: extractPseudo(filename),
           date: formatDate(filename),
         }))
       );

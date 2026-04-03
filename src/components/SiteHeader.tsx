@@ -113,17 +113,15 @@ export default function SiteHeader({
         </div>
 
         {/* Desktop */}
-        <div className="hidden md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-6">
-          <div className="min-w-0">
-            <NavItem
-              href="/"
-              label="Témoigner pour lutter"
-              active={isHome}
-              className={`${linkColorClass} block w-fit`}
-            />
-          </div>
+        <div className="hidden md:flex md:items-center md:justify-between">
+          <NavItem
+            href="/"
+            label="Témoigner pour lutter"
+            active={isHome}
+            className={`${linkColorClass} block w-fit shrink-0`}
+          />
 
-          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {navLinks.map((item) => (
               <NavItem
                 key={item.href}
@@ -134,8 +132,6 @@ export default function SiteHeader({
               />
             ))}
           </nav>
-
-          <div />
         </div>
       </div>
     </header>
