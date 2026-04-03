@@ -479,7 +479,7 @@ export default function HomePage() {
           </div>
 
           <div className="mono text-[12px] opacity-50 leading-relaxed max-w-[900px]">
-            <span className="opacity-70">tips :</span> glisser une image pour la déplacer — attraper le coin bas droit pour la redimensionner
+            <span className="opacity-70">tips :</span> glisser une image pour la déplacer - attraper le coin bas droit pour la redimensionner
           </div>
         </div>
       </section>

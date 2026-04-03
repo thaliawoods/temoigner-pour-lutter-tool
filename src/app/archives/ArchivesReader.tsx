@@ -69,7 +69,7 @@ function stripExt(s: string) {
 function formatYear(r: TPLReference): string {
   if (r.year) return String(r.year);
   if (r.yearRange) return `${r.yearRange.start}–${r.yearRange.end}`;
-  return "—";
+  return "-";
 }
 
 function prettyType(t: string) {
@@ -349,7 +349,7 @@ export default function ArchivesReader() {
           const active = selectedId === row.id;
           const r = row.ref;
           const title = r?.title ?? "Connecter la référence";
-          const year = r ? formatYear(r) : "—";
+          const year = r ? formatYear(r) : "-";
           const creator = r?.creator ?? "";
           const isUnlinked = !r;
           const mediaCount = row.items.length;

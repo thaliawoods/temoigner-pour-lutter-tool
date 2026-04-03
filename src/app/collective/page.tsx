@@ -31,7 +31,7 @@ function Section({
 export default function CollectivePage() {
   return (
     <main className="w-full pb-24">
-      {/* ——— Hero ——— */}
+      {/* --- Hero --- */}
       <div className="mx-auto w-full max-w-[860px] px-6 pt-16 pb-14">
         <div className="mono text-[11px] uppercase tracking-[0.22em] mb-6">
           collective
@@ -47,26 +47,26 @@ export default function CollectivePage() {
           Le duo Ely &amp; Marion est né avec l'intention de créer un outil
           de diffusion des luttes féministes. La collective est composée de
           deux jeunes artistes, Elyette Gauthier et Marion Serclérat,
-          récemment diplômées du DNSEP Art contemporain — Design contemporain,
+          récemment diplômées du DNSEP Art contemporain - Design contemporain,
           mention Espace, à l'École d'Art et de Design de Saint-Étienne.
         </p>
       </div>
 
       <SectionDivider />
 
-      {/* ——— À propos ——— */}
+      {/* --- À propos --- */}
       <Section label="à propos">
         <p className="gertrude text-[17px] leading-[1.7] text-black/80">
-          Créer un outil de diffusion des luttes féministes — voilà la mission
+          Créer un outil de diffusion des luttes féministes - voilà la mission
           que se donne la collective. Composée d'Elyette Gauthier et Marion
-          Serclérat, toutes deux diplômées du DNSEP Art contemporain — Design
+          Serclérat, toutes deux diplômées du DNSEP Art contemporain - Design
           contemporain, mention Espace (ESADSE).
         </p>
       </Section>
 
       <SectionDivider />
 
-      {/* ——— Artistes ——— */}
+      {/* --- Artistes --- */}
       <Section label="artistes">
         <div className="space-y-10">
           <div>
@@ -101,11 +101,11 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* ——— Témoigner pour lutter ——— */}
+      {/* --- Témoigner pour lutter --- */}
       <Section label="témoigner pour lutter">
         <div className="space-y-6">
           <p className="gertrude text-[17px] leading-[1.7] text-black/80">
-            Performance live audiovisuelle composée en duo — Marion à l'image,
+            Performance live audiovisuelle composée en duo - Marion à l'image,
             Elyette au son. Une tentative de subvertir des espaces saturés par
             la violence et les codes patriarcaux, en les envahissant avec des
             codes et références féministes, et de créer des liens entre
@@ -142,7 +142,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* ——— Agenda 2025 ——— */}
+      {/* --- Agenda 2025 --- */}
       <Section label="2025">
         <div className="space-y-0">
           {[
@@ -197,7 +197,7 @@ export default function CollectivePage() {
 
       <SectionDivider />
 
-      {/* ——— Contact ——— */}
+      {/* --- Contact --- */}
       <Section label="contact">
         <div className="space-y-0">
           {[

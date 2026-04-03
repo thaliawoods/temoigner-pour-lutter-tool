@@ -153,7 +153,7 @@ function mulberry32(seed: number) {
 
 function trunc(s: string, n = 34) {
   const t = (s ?? "").trim();
-  if (!t) return "—";
+  if (!t) return "-";
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 
@@ -161,7 +161,7 @@ function displayName(f: MediaFile): string {
   if (f.ref) {
     const parts = [f.ref.title];
     if (f.ref.creator) parts.push(f.ref.creator);
-    return parts.join(" — ");
+    return parts.join(" - ");
   }
   return f.name;
 }
@@ -465,7 +465,7 @@ function VersoPage({
                       style={{ fontSize: "10px", lineHeight: 1.4, marginBottom: "4px", color: "#27272a" }}
                     >
                       <span style={{ fontWeight: 500 }}>{ref.title}</span>
-                      {ref.creator ? <span style={{ color: "#71717a" }}> — {ref.creator}</span> : null}
+                      {ref.creator ? <span style={{ color: "#71717a" }}> - {ref.creator}</span> : null}
                       {yearStr ? <span style={{ color: "#a1a1aa" }}> ({yearStr})</span> : null}
                     </div>
                   );
@@ -496,7 +496,7 @@ function VersoPage({
                   style={{ fontSize: "10px", lineHeight: 1.4, marginBottom: "4px", color: "#a1a1aa" }}
                 >
                   Connecter la référence
-                  <span style={{ color: "#d4d4d8" }}> — {name}</span>
+                  <span style={{ color: "#d4d4d8" }}> - {name}</span>
                 </div>
               ))}
             </div>
@@ -537,7 +537,7 @@ function Tutorial({ onDismiss }: { onDismiss: () => void }) {
       >
         ×
       </button>
-      <span className="opacity-70">aide :</span> glisser les visuels vers le canvas — ajouter du son depuis la console — redimensionner et composer — exporter en pdf, vidéo ou partager
+      <span className="opacity-70">aide :</span> glisser les visuels vers le canvas - ajouter du son depuis la console - redimensionner et composer - exporter en pdf, vidéo ou partager
     </div>
   );
 }
@@ -1338,7 +1338,7 @@ export default function DIYPage() {
         await v.play().catch(() => {});
       }
 
-      // Capture static background (images, text, etc.) — videos will be drawn live
+      // Capture static background (images, text, etc.) - videos will be drawn live
       const rectoStaticUrl = await toPng(rectoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
       const versoDataUrl = await toPng(versoNode, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
 
@@ -1434,7 +1434,7 @@ export default function DIYPage() {
 
       recorder.start(250);
 
-      // Recto phase — videos play live
+      // Recto phase - videos play live
       setVideoProgress("recto 0%");
       const rectoStart = Date.now();
       const rectoInterval = setInterval(() => {
@@ -1444,7 +1444,7 @@ export default function DIYPage() {
       await new Promise<void>((res) => setTimeout(res, rectoDuration));
       clearInterval(rectoInterval);
 
-      // Switch to verso — stop live drawing
+      // Switch to verso - stop live drawing
       animating = false;
       for (const v of videoEls) v.pause();
       ctx.clearRect(0, 0, offscreen.width, offscreen.height);
@@ -1608,7 +1608,7 @@ export default function DIYPage() {
 
           <div className="mt-4 border-t border-zinc-200" />
 
-          {/* Stage — canvas + pool (desktop) or canvas only (mobile) */}
+          {/* Stage - canvas + pool (desktop) or canvas only (mobile) */}
           <div className="mt-4">
             <div
               ref={stageRef}
@@ -1624,7 +1624,7 @@ export default function DIYPage() {
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
             >
-              {/* Pool tiles — desktop only (scattered around canvas) */}
+              {/* Pool tiles - desktop only (scattered around canvas) */}
               {!isMobile &&
                 !showVerso &&
                 tileData.map(({ tile, file }) => {
@@ -1655,7 +1655,7 @@ export default function DIYPage() {
                   background: "#fff",
                 }}
               >
-                {/* Canvas area — recto or verso */}
+                {/* Canvas area - recto or verso */}
                 {showVerso ? (
                   <div
                     ref={canvasCaptureRef}
@@ -1737,7 +1737,7 @@ export default function DIYPage() {
                       );
                     })}
 
-                    {/* Audio strip — pinned to the bottom of the canvas */}
+                    {/* Audio strip - pinned to the bottom of the canvas */}
                     {canvasAudio.length > 0 && (
                       <div
                         className="absolute inset-x-0 bottom-0 bg-white"
@@ -1771,7 +1771,7 @@ export default function DIYPage() {
                   </div>
                 )}
 
-                {/* Audio console (not captured) — desktop: absolute, mobile: flow */}
+                {/* Audio console (not captured) - desktop: absolute, mobile: flow */}
                 {!isMobile && (
                   <div
                     className="absolute border border-zinc-200 bg-white"
@@ -1859,7 +1859,7 @@ export default function DIYPage() {
                         {ghost.kind.toUpperCase()}
                       </div>
                       <div className="mt-2 gertrude text-[13px] leading-snug text-zinc-900">
-                        {trunc((() => { const f = filesById.get(ghost.fileId); return f ? displayName(f) : "—"; })(), 48)}
+                        {trunc((() => { const f = filesById.get(ghost.fileId); return f ? displayName(f) : "-"; })(), 48)}
                       </div>
                     </div>
                     {ghost.kind === "audio" ? <WaveMini seed={77} /> : null}
@@ -1872,7 +1872,7 @@ export default function DIYPage() {
           {/* Mobile: audio console + media gallery below the canvas */}
           {isMobile && (
             <div className="mt-4 space-y-6">
-              {/* Audio console — scrollable */}
+              {/* Audio console - scrollable */}
               <div className="border border-zinc-200 bg-white">
                 <div className="p-3 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -1963,7 +1963,7 @@ export default function DIYPage() {
         </div>
       </div>
 
-      {/* Hidden verso div for PDF capture — always rendered off-screen */}
+      {/* Hidden verso div for PDF capture - always rendered off-screen */}
       <div
         style={{
           position: "absolute",
