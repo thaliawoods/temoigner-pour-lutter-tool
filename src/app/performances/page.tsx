@@ -16,6 +16,7 @@ function cleanTitle(s: string) {
   return s
     .replace(/\.[a-z0-9]+$/i, "")
     .replace(/[\s_-]+\d{1,2}[\s_-]\d{1,2}[\s_-]\d{1,2}$/, "")
+    .replace(/\bVideo\b/g, "Vidéo")
     .trim();
 }
 
@@ -64,8 +65,8 @@ export default function PerformancesPage() {
                   src={buildUrl(filename)}
                   controls
                   playsInline
-                  preload="metadata"
-                  className="h-auto w-full"
+                  preload="auto"
+                  className="h-auto w-full bg-zinc-100"
                   onError={(e) => {
                     const article = (e.currentTarget as HTMLElement).closest("article");
                     if (article) (article as HTMLElement).style.display = "none";
