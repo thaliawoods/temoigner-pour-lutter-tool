@@ -1261,7 +1261,14 @@ export default function DIYPage() {
 
   const [videoProgress, setVideoProgress] = useState("");
   const [showTutorial, setShowTutorial] = useState(true);
-  const isMobile = (stageSize.w > 0 && stageSize.w < 640) || (typeof window !== "undefined" && window.innerWidth < 640);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const addToCanvas = useCallback(
     (fileId: string, kind: MediaKind) => {
