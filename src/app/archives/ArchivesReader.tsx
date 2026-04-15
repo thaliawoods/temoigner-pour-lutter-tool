@@ -235,7 +235,6 @@ export default function ArchivesReader() {
 
 
         const groupMap = new Map<string, GroupedRow>();
-        const ungrouped: GroupedRow[] = [];
 
         for (const item of items) {
           if (item.ref) {
@@ -246,12 +245,10 @@ export default function ArchivesReader() {
             } else {
               groupMap.set(key, { id: key, ref: item.ref, items: [item] });
             }
-          } else {
-            ungrouped.push({ id: item.id, ref: null, items: [item] });
           }
         }
 
-        const grouped = [...groupMap.values(), ...ungrouped].sort((a, b) => {
+        const grouped = [...groupMap.values()].sort((a, b) => {
           const ya = a.ref?.year ?? a.ref?.yearRange?.start ?? 9999;
           const yb = b.ref?.year ?? b.ref?.yearRange?.start ?? 9999;
           return ya - yb;
